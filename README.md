@@ -16,6 +16,7 @@ A Node.js scraper that extracts business information from Google Maps, converted
 
 1. Clone or download this repository
 2. Install dependencies:
+
 ```bash
 npm install
 ```
@@ -60,6 +61,7 @@ OUTPUT_FILE=my_results.json node run.js "cafes in Casablanca"
 The scraper generates two files:
 
 ### JSON Output (`google_maps_results.json`)
+
 ```json
 {
   "timestamp": "2024-01-15T10:30:00.000Z",
@@ -77,6 +79,7 @@ The scraper generates two files:
 ```
 
 ### CSV Output (`google_maps_results.csv`)
+
 ```csv
 Name,Phone Number,Emails,Website
 "Web Design Company","+212 5 35 12 34 56","contact@webdesign.ma; info@webdesign.ma","https://webdesign.ma"
@@ -90,7 +93,7 @@ Name,Phone Number,Emails,Website
    - Moroccan phone numbers
    - Website URLs from map data
 3. **Website Scraping**: Visits each business website to find email addresses
-4. **Data Processing**: 
+4. **Data Processing**:
    - Removes duplicates
    - Filters out social media links
    - Matches names with corresponding contact information
@@ -102,16 +105,17 @@ You can modify the scraper behavior by editing the configuration in `run.js` or 
 
 ```javascript
 const config = {
-    searchQuery: 'Your search query',
-    headless: true,           // Set to false to see browser
-    delay: 1000,             // Delay between requests (ms)
-    outputFile: 'results.json'
+  searchQuery: "Your search query",
+  headless: true, // Set to false to see browser
+  delay: 1000, // Delay between requests (ms)
+  outputFile: "results.json",
 };
 ```
 
 ## Error Handling
 
 The scraper includes robust error handling:
+
 - Continues if individual websites fail to load
 - Handles network timeouts gracefully
 - Logs detailed error information
@@ -136,6 +140,7 @@ The scraper includes robust error handling:
 ### Debug Mode
 
 Run with visible browser to debug:
+
 ```bash
 HEADLESS=false node run.js "your search query"
 ```

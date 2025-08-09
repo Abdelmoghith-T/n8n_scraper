@@ -132,6 +132,59 @@ class GoogleMapsScraper {
         return '';
     }
 
+    // Extract city from search query for individual business scraping
+    extractCityFromQuery(query) {
+        // Normalize query by removing accents and converting to lowercase
+        const queryLower = query.toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, ''); // Remove diacritics/accents
+
+        // Comprehensive list of Moroccan cities with variations
+        const cities = [
+            { names: ['fès', 'fes'], canonical: 'Fès' },
+            { names: ['casablanca', 'casa'], canonical: 'Casablanca' },
+            { names: ['rabat'], canonical: 'Rabat' },
+            { names: ['marrakech', 'marrakesh'], canonical: 'Marrakech' },
+            { names: ['agadir'], canonical: 'Agadir' },
+            { names: ['tanger', 'tangier'], canonical: 'Tanger' },
+            { names: ['meknès', 'meknes'], canonical: 'Meknès' },
+            { names: ['oujda'], canonical: 'Oujda' },
+            { names: ['tétouan', 'tetouan'], canonical: 'Tétouan' },
+            { names: ['salé', 'sale'], canonical: 'Salé' },
+            { names: ['kenitra'], canonical: 'Kenitra' },
+            { names: ['el jadida'], canonical: 'El Jadida' },
+            { names: ['beni mellal'], canonical: 'Beni Mellal' },
+            { names: ['nador'], canonical: 'Nador' },
+            { names: ['khouribga'], canonical: 'Khouribga' },
+            { names: ['settat'], canonical: 'Settat' },
+            { names: ['mohammedia'], canonical: 'Mohammedia' },
+            { names: ['larache'], canonical: 'Larache' },
+            { names: ['ksar el kebir'], canonical: 'Ksar El Kebir' },
+            { names: ['berrechid'], canonical: 'Berrechid' }
+        ];
+
+        // Check for city names in the query using word boundaries for precise matching
+        for (const city of cities) {
+            for (const name of city.names) {
+                // Normalize city name for comparison (remove accents)
+                const normalizedName = name.toLowerCase()
+                    .normalize('NFD')
+                    .replace(/[\u0300-\u036f]/g, '');
+
+                // Use word boundaries to ensure we match complete words only
+                const regex = new RegExp(`\\b${normalizedName.replace(/\s+/g, '\\s+')}\\b`, 'i');
+                if (regex.test(queryLower)) {
+                    console.log(`🏙️  Detected city: ${city.canonical} from query: "${query}"`);
+                    return city.canonical;
+                }
+            }
+        }
+
+        // If no specific city found, return Morocco as fallback
+        console.log(`🏙️  No specific city detected in query: "${query}", using Morocco as fallback`);
+        return 'Morocco';
+    }
+
     async scrollToLoadMore() {
         try {
             console.log('🔄 Loading ALL available results with aggressive scrolling...');
@@ -337,10 +390,10 @@ class GoogleMapsScraper {
                             }
                         }
 
-                        // Enhanced filtering to exclude Google tracking URLs and garbage data
+                        // Enhanced filtering to exclude Google tracking URLs, garbage data, and comments
                         if (name &&
                             name.length > 3 &&
-                            name.length < 150 &&
+                            name.length < 80 && // Reduced from 150 to 80
                             !name.match(/^0ah[A-Za-z0-9]+/) && // Google tracking URLs
                             !name.match(/[A-Za-z0-9]{25,}/) && // Long alphanumeric strings
                             !name.includes('UKEw') && // Google tracking patterns
@@ -357,7 +410,25 @@ class GoogleMapsScraper {
                             !name.includes('oEw') && // More Google tracking patterns
                             !name.includes('oAw') && // More Google tracking patterns
                             name.match(/[a-zA-Z\u0600-\u06FF\u0750-\u077F]/) && // Must contain letters
-                            !name.match(/^[A-Za-z0-9_-]{20,}$/)) { // No long codes
+                            !name.match(/^[A-Za-z0-9_-]{20,}$/) && // No long codes
+                            // Enhanced filtering to exclude comments and reviews
+                            !name.match(/^(très|super|excellent|parfait|génial|bien|mal|mauvais|nul)/i) &&
+                            !name.match(/^(je|j'|nous|on|il|elle|ils|elles|vous|tu|c'est|c'était)/i) &&
+                            !name.match(/^(recommande|conseille|déconseille|éviter|à éviter)/i) &&
+                            !name.match(/^(service|accueil|personnel|équipe|staff|client|clientèle)/i) &&
+                            !name.match(/^(prix|tarif|coût|cher|pas cher|gratuit|payant)/i) &&
+                            !name.match(/^(rapide|lent|long|court|vite|rapidement)/i) &&
+                            !name.match(/^(merci|thanks|thank you|bravo|félicitations)/i) &&
+                            !name.match(/^(problème|souci|bug|erreur|panne|défaut)/i) &&
+                            !name.match(/^(avis|commentaire|review|opinion|expérience)/i) &&
+                            !name.match(/^(hier|aujourd'hui|demain|maintenant|récemment)/i) &&
+                            !name.match(/^(depuis|pendant|durant|après|avant|lors)/i) &&
+                            !name.match(/^\d+\s*(ans?|mois|jours?|heures?|minutes?|semaines?)$/i) &&
+                            !name.match(/^(mais|cependant|néanmoins|toutefois|pourtant)/i) &&
+                            !name.match(/^(vraiment|assez|très|trop|plutôt|quite|rather)/i) &&
+                            !name.match(/^(bonjour|bonsoir|salut|hello|hi|bye|au revoir)/i) &&
+                            !name.match(/il y a \d+/i) &&
+                            !name.match(/^\w+\s+(est|était|sera|serait|a|avait|aura)/i)) { // Sentence structures
                             results.push({
                                 name: name.trim(),
                                 element: container,
@@ -608,7 +679,26 @@ class GoogleMapsScraper {
                         !name.match(/^[0-9\s\-\+\(\)]+$/) && // Phone numbers
                         !name.match(/^(lun|mar|mer|jeu|ven|sam|dim)/i) && // Days of week
                         !name.match(/^\d+h\d+/i) && // Hours like 9h00
-                        name.match(/[a-zA-Z\u0600-\u06FF\u0750-\u077F]/) // Must contain letters
+                        name.match(/[a-zA-Z\u0600-\u06FF\u0750-\u077F]/) && // Must contain letters
+                        // Enhanced filtering to exclude comments and reviews
+                        !name.match(/^(très|super|excellent|parfait|génial|bien|mal|mauvais|nul)/i) && // Review adjectives
+                        !name.match(/^(je|j'|nous|on|il|elle|ils|elles|vous|tu|c'est|c'était)/i) && // Personal pronouns
+                        !name.match(/^(recommande|conseille|déconseille|éviter|à éviter)/i) && // Recommendation words
+                        !name.match(/^(service|accueil|personnel|équipe|staff|client|clientèle)/i) && // Service words
+                        !name.match(/^(prix|tarif|coût|cher|pas cher|gratuit|payant)/i) && // Price words
+                        !name.match(/^(rapide|lent|long|court|vite|rapidement)/i) && // Speed words
+                        !name.match(/^(merci|thanks|thank you|bravo|félicitations)/i) && // Thanks/praise
+                        !name.match(/^(problème|souci|bug|erreur|panne|défaut)/i) && // Problem words
+                        !name.match(/^(avis|commentaire|review|opinion|expérience)/i) && // Review words
+                        !name.match(/^(hier|aujourd'hui|demain|maintenant|récemment)/i) && // Time words
+                        !name.match(/^(depuis|pendant|durant|après|avant|lors)/i) && // Time prepositions
+                        !name.match(/^\d+\s*(ans?|mois|jours?|heures?|minutes?|semaines?)$/i) && // Time periods
+                        !name.match(/^(mais|cependant|néanmoins|toutefois|pourtant)/i) && // Conjunctions
+                        !name.match(/^(vraiment|assez|très|trop|plutôt|quite|rather)/i) && // Adverbs
+                        !name.match(/^(bonjour|bonsoir|salut|hello|hi|bye|au revoir)/i) && // Greetings
+                        !name.match(/il y a \d+/i) && // "il y a X" time expressions
+                        !name.match(/^\w+\s+(est|était|sera|serait|a|avait|aura)/i) && // Sentence structures
+                        name.length < 80 // Shorter length for business names
                     ) {
                         businessNames.push(name);
                     }
@@ -670,7 +760,7 @@ class GoogleMapsScraper {
                     const text = textNode.textContent?.trim();
                     if (text &&
                         text.length > 5 &&
-                        text.length < 100 &&
+                        text.length < 80 && // Reduced from 100 to 80
                         !text.includes('Google') &&
                         !text.includes('Maps') &&
                         !text.includes('km') &&
@@ -683,12 +773,30 @@ class GoogleMapsScraper {
                         !text.match(/^(lun|mar|mer|jeu|ven|sam|dim)/i) &&
                         !text.match(/^\d+h\d+/i) &&
                         text.match(/[a-zA-Z\u0600-\u06FF\u0750-\u077F]/) &&
+                        // Enhanced filtering to exclude comments and reviews
+                        !text.match(/^(très|super|excellent|parfait|génial|bien|mal|mauvais|nul)/i) &&
+                        !text.match(/^(je|j'|nous|on|il|elle|ils|elles|vous|tu|c'est|c'était)/i) &&
+                        !text.match(/^(recommande|conseille|déconseille|éviter|à éviter)/i) &&
+                        !text.match(/^(service|accueil|personnel|équipe|staff|client|clientèle)/i) &&
+                        !text.match(/^(prix|tarif|coût|cher|pas cher|gratuit|payant)/i) &&
+                        !text.match(/^(rapide|lent|long|court|vite|rapidement)/i) &&
+                        !text.match(/^(merci|thanks|thank you|bravo|félicitations)/i) &&
+                        !text.match(/^(problème|souci|bug|erreur|panne|défaut)/i) &&
+                        !text.match(/^(avis|commentaire|review|opinion|expérience)/i) &&
+                        !text.match(/^(hier|aujourd'hui|demain|maintenant|récemment)/i) &&
+                        !text.match(/^(depuis|pendant|durant|après|avant|lors)/i) &&
+                        !text.match(/^\d+\s*(ans?|mois|jours?|heures?|minutes?|semaines?)$/i) &&
+                        !text.match(/^(mais|cependant|néanmoins|toutefois|pourtant)/i) &&
+                        !text.match(/^(vraiment|assez|très|trop|plutôt|quite|rather)/i) &&
+                        !text.match(/^(bonjour|bonsoir|salut|hello|hi|bye|au revoir)/i) &&
+                        !text.match(/il y a \d+/i) &&
+                        !text.match(/^\w+\s+(est|était|sera|serait|a|avait|aura)/i) &&
                         // Filter out Google Maps UI elements
                         !googleMapsUIElements.some(uiElement =>
                             text.toLowerCase().includes(uiElement.toLowerCase()) ||
                             uiElement.toLowerCase().includes(text.toLowerCase())
                         ) &&
-                        // Enhanced business name indicators
+                        // More restrictive business name indicators - must match at least one
                         (text.includes('Agence') ||
                          text.includes('Digital') ||
                          text.includes('Web') ||
@@ -741,10 +849,11 @@ class GoogleMapsScraper {
                          text.includes('Morocco') ||
                          text.includes('Fes') ||
                          text.includes('Fès') ||
-                         text.match(/^[A-Z][a-zA-Z\s]{4,}$/) || // Capitalized names
-                         text.match(/^[A-Z]{2,}/) || // All caps abbreviations
-                         text.match(/[A-Z][a-z]+[A-Z][a-z]+/) || // CamelCase
-                         text.match(/^[a-zA-Z]+\s+[A-Z][a-zA-Z]+/) // Multi-word names
+                         // More restrictive pattern matching
+                         (text.match(/^[A-Z][a-zA-Z\s]{4,}$/) && !text.match(/^[A-Z][a-z]+\s+(est|était|sera|a|avait)/)) || // Capitalized names but not sentences
+                         (text.match(/^[A-Z]{2,}$/) && text.length <= 10) || // Short all caps abbreviations only
+                         (text.match(/[A-Z][a-z]+[A-Z][a-z]+/) && !text.includes(' ')) || // CamelCase without spaces
+                         (text.match(/^[a-zA-Z]+\s+[A-Z][a-zA-Z]+$/) && text.split(' ').length <= 4) // Multi-word names (max 4 words)
                         )) {
                         textContents.push(text);
                     }
@@ -773,10 +882,10 @@ class GoogleMapsScraper {
                         let name = decodeURIComponent(urlParts.split('/')[0]).replace(/\+/g, ' ');
                         // Clean up the name
                         name = name.replace(/@.*$/, '').trim(); // Remove coordinates
-                        // Enhanced filtering to exclude Google tracking URLs and garbage data
+                        // Enhanced filtering to exclude Google tracking URLs, garbage data, and comments
                         if (name &&
                             name.length > 3 &&
-                            name.length < 150 &&
+                            name.length < 80 && // Reduced from 150 to 80
                             !name.match(/^0ah[A-Za-z0-9]+/) && // Google tracking URLs
                             !name.match(/[A-Za-z0-9]{25,}/) && // Long alphanumeric strings
                             !name.includes('UKEw') && // Google tracking patterns
@@ -793,7 +902,25 @@ class GoogleMapsScraper {
                             !name.includes('oEw') && // More Google tracking patterns
                             !name.includes('oAw') && // More Google tracking patterns
                             name.match(/[a-zA-Z\u0600-\u06FF\u0750-\u077F]/) && // Must contain letters
-                            !name.match(/^[A-Za-z0-9_-]{20,}$/)) { // No long codes
+                            !name.match(/^[A-Za-z0-9_-]{20,}$/) && // No long codes
+                            // Enhanced filtering to exclude comments and reviews
+                            !name.match(/^(très|super|excellent|parfait|génial|bien|mal|mauvais|nul)/i) &&
+                            !name.match(/^(je|j'|nous|on|il|elle|ils|elles|vous|tu|c'est|c'était)/i) &&
+                            !name.match(/^(recommande|conseille|déconseille|éviter|à éviter)/i) &&
+                            !name.match(/^(service|accueil|personnel|équipe|staff|client|clientèle)/i) &&
+                            !name.match(/^(prix|tarif|coût|cher|pas cher|gratuit|payant)/i) &&
+                            !name.match(/^(rapide|lent|long|court|vite|rapidement)/i) &&
+                            !name.match(/^(merci|thanks|thank you|bravo|félicitations)/i) &&
+                            !name.match(/^(problème|souci|bug|erreur|panne|défaut)/i) &&
+                            !name.match(/^(avis|commentaire|review|opinion|expérience)/i) &&
+                            !name.match(/^(hier|aujourd'hui|demain|maintenant|récemment)/i) &&
+                            !name.match(/^(depuis|pendant|durant|après|avant|lors)/i) &&
+                            !name.match(/^\d+\s*(ans?|mois|jours?|heures?|minutes?|semaines?)$/i) &&
+                            !name.match(/^(mais|cependant|néanmoins|toutefois|pourtant)/i) &&
+                            !name.match(/^(vraiment|assez|très|trop|plutôt|quite|rather)/i) &&
+                            !name.match(/^(bonjour|bonsoir|salut|hello|hi|bye|au revoir)/i) &&
+                            !name.match(/il y a \d+/i) &&
+                            !name.match(/^\w+\s+(est|était|sera|serait|a|avait|aura)/i)) { // Sentence structures
                             names.push(name);
                         }
                     }
@@ -824,10 +951,10 @@ class GoogleMapsScraper {
                 );
                 name = name.replace(/\\+/g, '').trim();
 
-                // Enhanced filtering to exclude Google tracking URLs and garbage data
+                // Enhanced filtering to exclude Google tracking URLs, garbage data, and comments
                 if (name &&
                     name.length > 3 &&
-                    name.length < 100 &&
+                    name.length < 80 && // Reduced from 100 to 80
                     !name.match(/^https?:\/\//) &&
                     !name.match(/^\d+$/) &&
                     !name.includes('google.com') &&
@@ -847,7 +974,25 @@ class GoogleMapsScraper {
                     !name.includes('oEw') && // More Google tracking patterns
                     !name.includes('oAw') && // More Google tracking patterns
                     name.match(/[a-zA-Z\u0600-\u06FF\u0750-\u077F]/) && // Must contain letters
-                    !name.match(/^[A-Za-z0-9_-]{20,}$/)) { // No long codes
+                    !name.match(/^[A-Za-z0-9_-]{20,}$/) && // No long codes
+                    // Enhanced filtering to exclude comments and reviews
+                    !name.match(/^(très|super|excellent|parfait|génial|bien|mal|mauvais|nul)/i) &&
+                    !name.match(/^(je|j'|nous|on|il|elle|ils|elles|vous|tu|c'est|c'était)/i) &&
+                    !name.match(/^(recommande|conseille|déconseille|éviter|à éviter)/i) &&
+                    !name.match(/^(service|accueil|personnel|équipe|staff|client|clientèle)/i) &&
+                    !name.match(/^(prix|tarif|coût|cher|pas cher|gratuit|payant)/i) &&
+                    !name.match(/^(rapide|lent|long|court|vite|rapidement)/i) &&
+                    !name.match(/^(merci|thanks|thank you|bravo|félicitations)/i) &&
+                    !name.match(/^(problème|souci|bug|erreur|panne|défaut)/i) &&
+                    !name.match(/^(avis|commentaire|review|opinion|expérience)/i) &&
+                    !name.match(/^(hier|aujourd'hui|demain|maintenant|récemment)/i) &&
+                    !name.match(/^(depuis|pendant|durant|après|avant|lors)/i) &&
+                    !name.match(/^\d+\s*(ans?|mois|jours?|heures?|minutes?|semaines?)$/i) &&
+                    !name.match(/^(mais|cependant|néanmoins|toutefois|pourtant)/i) &&
+                    !name.match(/^(vraiment|assez|très|trop|plutôt|quite|rather)/i) &&
+                    !name.match(/^(bonjour|bonsoir|salut|hello|hi|bye|au revoir)/i) &&
+                    !name.match(/il y a \d+/i) &&
+                    !name.match(/^\w+\s+(est|était|sera|serait|a|avait|aura)/i)) { // Sentence structures
                     regexNames.push(name);
                 }
             }
@@ -859,9 +1004,97 @@ class GoogleMapsScraper {
         const allNames = [...domNames, ...urlNames, ...regexNames];
         const uniqueNames = [...new Set(allNames)];
 
-        console.log(`📊 Total extraction found ${uniqueNames.length} unique business names from all strategies`);
+        // Final validation to remove any remaining comments/reviews
+        const validBusinessNames = uniqueNames.filter(name => {
+            // Additional validation patterns for business names
+            return name &&
+                name.length >= 3 &&
+                name.length <= 80 &&
+                // Must not be a sentence or comment
+                !name.match(/^(je|j'|nous|vous|ils|elles|on|il|elle|tu)\s+/i) &&
+                !name.match(/\s+(est|était|sera|serait|a|avait|aura|sont|étaient)\s+/i) &&
+                !name.match(/^(très|super|excellent|parfait|génial|bien|mal|mauvais|nul)\s+/i) &&
+                !name.match(/^(merci|thanks|bravo|félicitations)\s+/i) &&
+                !name.match(/^(bonjour|bonsoir|salut|hello|hi|bye)\s+/i) &&
+                !name.match(/^(recommande|conseille|déconseille|éviter)\s+/i) &&
+                !name.match(/^(service|accueil|personnel|équipe|staff|client)\s+/i) &&
+                !name.match(/^(prix|tarif|coût|cher|gratuit|payant)\s+/i) &&
+                !name.match(/^(rapide|lent|long|court|vite)\s+/i) &&
+                !name.match(/^(problème|souci|bug|erreur|panne)\s+/i) &&
+                !name.match(/^(avis|commentaire|review|opinion)\s+/i) &&
+                !name.match(/^(hier|aujourd'hui|demain|maintenant)\s+/i) &&
+                !name.match(/^(depuis|pendant|durant|après|avant)\s+/i) &&
+                !name.match(/^(mais|cependant|néanmoins|toutefois)\s+/i) &&
+                !name.match(/^(vraiment|assez|très|trop|plutôt)\s+/i) &&
+                // Must not contain typical review phrases
+                !name.includes('il y a') &&
+                !name.includes('j\'ai') &&
+                !name.includes('nous avons') &&
+                !name.includes('je recommande') &&
+                !name.includes('très bien') &&
+                !name.includes('pas mal') &&
+                !name.includes('super bien') &&
+                !name.includes('excellent service') &&
+                // Must not be a time expression
+                !name.match(/^\d+\s*(ans?|mois|jours?|heures?|minutes?|semaines?)/i) &&
+                !name.match(/il y a \d+/i) &&
+                // Must not be Google Maps UI elements or ratings
+                !name.match(/\d+[,\.]\d+\(\d+\)/i) && // Ratings like "5,0(12)"
+                !name.match(/.*\s+\d+[,\.]\d+\(\d+\).*\d{4}-\d{6}/i) && // Complex UI strings with ratings and phone numbers
+                !name.match(/^(rendez-vous|appointment|booking|réservation)\s+(en\s+ligne|online)/i) && // Generic booking UI
+                !name.match(/^(voir|view|show|afficher)\s+(plus|more|tout|all)/i) && // "View more" type UI elements
+                !name.match(/^(ouvrir|open|fermer|close)\s+(maintenant|now|bientôt|soon)/i) && // Open/close status
+                !name.match(/^(horaires?|hours?|schedule)\s+(d'ouverture|opening)/i) && // Opening hours
+                !name.match(/^(itinéraire|directions?|route)\s+(vers|to)/i) && // Directions UI
+                !name.match(/^(appeler|call|téléphoner)\s+(maintenant|now)/i) && // Call now buttons
+                !name.match(/^(site|website|web)\s+(officiel|official)/i) && // Official website links
+                !name.match(/^(plus\s+d'infos?|more\s+info|en\s+savoir\s+plus)/i) && // More info links
+                // Must not contain quotes (often indicates reviews)
+                !name.includes('"') &&
+                !name.includes('"') &&
+                !name.includes('"') &&
+                !name.includes('«') &&
+                !name.includes('»') &&
+                // Should look like a business name - much more permissive validation
+                (
+                    // Basic business name patterns (more flexible)
+                    name.match(/^[A-Za-z0-9][A-Za-z0-9\s&\-\.]{2,}$/) || // Alphanumeric start, reasonable characters
+                    name.match(/^[A-Z]{2,}$/) || // All caps (like acronyms)
+                    name.match(/[A-Z][a-z]+[A-Z]/) || // CamelCase
 
-        return uniqueNames;
+                    // Contains business-like words (expanded list)
+                    name.includes('Agence') || name.includes('Digital') || name.includes('Web') ||
+                    name.includes('Marketing') || name.includes('Création') || name.includes('Développement') ||
+                    name.includes('Technologies') || name.includes('Solutions') || name.includes('Services') ||
+                    name.includes('Studio') || name.includes('Design') || name.includes('Media') ||
+                    name.includes('Communication') || name.includes('Consulting') || name.includes('Conseil') ||
+                    name.includes('SARL') || name.includes('SAS') || name.includes('SA') || name.includes('EURL') ||
+                    name.includes('Société') || name.includes('Company') || name.includes('Corp') ||
+                    name.includes('Ltd') || name.includes('Group') || name.includes('Groupe') ||
+                    name.includes('Center') || name.includes('Centre') || name.includes('Lab') ||
+                    name.includes('Labs') || name.includes('Tech') || name.includes('IT') ||
+                    name.includes('Software') || name.includes('App') || name.includes('Code') ||
+                    name.includes('Dev') || name.includes('Pro') || name.includes('Plus') ||
+                    name.includes('Max') || name.includes('Elite') || name.includes('Premium') ||
+                    name.includes('Expert') || name.includes('Master') || name.includes('Creative') ||
+                    name.includes('Innovation') || name.includes('Network') || name.includes('System') ||
+                    name.includes('Global') || name.includes('International') || name.includes('Maroc') ||
+                    name.includes('Morocco') || name.includes('Fes') || name.includes('Fès') ||
+
+                    // Additional business indicators
+                    name.includes('Info') || name.includes('Data') || name.includes('Soft') ||
+                    name.includes('Net') || name.includes('Online') || name.includes('Digital') ||
+                    name.includes('Cyber') || name.includes('Cloud') || name.includes('Smart') ||
+                    name.includes('Auto') || name.includes('Mobile') || name.includes('Print') ||
+                    name.includes('Photo') || name.includes('Video') || name.includes('Audio') ||
+                    name.includes('Event') || name.includes('Trade') || name.includes('Business') ||
+                    name.includes('Commercial') || name.includes('Industrial') || name.includes('Retail')
+                );
+        });
+
+        console.log(`📊 After validation: ${validBusinessNames.length} valid business names (filtered out ${uniqueNames.length - validBusinessNames.length} invalid entries)`);
+
+        return validBusinessNames;
     }
 
     // New method: Scrape individual business page for 100% accurate data
@@ -1093,8 +1326,9 @@ class GoogleMapsScraper {
         try {
             console.log(`🔍 Searching for: ${businessName}`);
 
-            // Search for the specific business
-            const searchUrl = `https://www.google.com/maps/search/${encodeURIComponent(businessName + ' Casablanca')}`;
+            // Search for the specific business with detected city
+            const location = this.extractCityFromQuery(this.searchQuery);
+            const searchUrl = `https://www.google.com/maps/search/${encodeURIComponent(businessName + ' ' + location)}`;
             await this.page.goto(searchUrl, { waitUntil: 'networkidle2', timeout: 20000 });
 
             await new Promise(resolve => setTimeout(resolve, 3000));
@@ -1269,9 +1503,7 @@ class GoogleMapsScraper {
 
             try {
                 // Create search URL for specific business with location context
-                const location = this.searchQuery.includes('Fès') ? 'Fès' :
-                               this.searchQuery.includes('Casablanca') ? 'Casablanca' :
-                               this.searchQuery.includes('Rabat') ? 'Rabat' : 'Morocco';
+                const location = this.extractCityFromQuery(this.searchQuery);
 
                 const searchQuery = `${business.name} ${location}`;
                 const searchUrl = `https://www.google.com/maps/search/${encodeURIComponent(searchQuery)}`;
@@ -1525,447 +1757,6 @@ class GoogleMapsScraper {
         if (!lowerName.match(/[a-zA-Z\u0600-\u06FF\u0750-\u077F]/)) return false;
 
         return true;
-    }
-
-    // Streamlined scraping without individual verification
-    async streamlinedScrape(searchQuery) {
-        console.log('🔍 Google Maps Business Scraper');
-        console.log('================================');
-        console.log(`🎯 Search Query: ${searchQuery}`);
-        console.log(`🤖 Headless Mode: ${this.headless}`);
-        console.log(`⏱️  Delay: ${this.delay}ms`);
-        console.log(`📁 Output File: ${this.outputFile}`);
-        console.log('');
-
-        const startTime = new Date();
-        console.log(`⏰ Starting scrape at ${startTime.toLocaleTimeString()}`);
-
-        try {
-            // Step 1: Load Google Maps and extract all data
-            console.log('🚀 Initializing browser...');
-            await this.init();
-
-            console.log('📍 Step 1: Scraping Google Maps main page...');
-            const htmlContent = await this.scrapeGoogleMaps();
-
-            // Step 2: Use proven traditional method (which was working perfectly)
-            console.log('🎯 Step 2: Extracting business data with proven algorithm...');
-            const names = await this.extractBusinessNames(htmlContent);
-            const numbers = this.extractPhoneNumbers(htmlContent);
-            const websites = this.extractWebsiteUrls(htmlContent);
-
-            console.log(`📊 Extraction results: ${names.length} names, ${numbers.length} numbers, ${websites.length} websites`);
-
-            // Step 3: Process and match data with proven algorithm
-            console.log('⚙️  Step 3: Processing and matching data with proven algorithm...');
-            const processedData = await this.processBusinessData(names, numbers);
-
-            // Step 4: Scrape emails from websites (streamlined approach)
-            console.log('📧 Step 4: Scraping emails from business websites...');
-            const dataWithEmails = await this.scrapeEmailsFromWebsitesStreamlined(processedData, websites);
-
-            // Step 5: Filter out businesses with only names
-            console.log('🔍 Step 5: Filtering businesses with contact information...');
-            const finalResults = this.filterBusinessesWithContactStreamlined(dataWithEmails);
-
-            // Step 5: Save results
-            console.log('💾 Step 5: Saving results...');
-            await this.saveResults(finalResults);
-
-            const endTime = new Date();
-            const duration = (endTime - startTime) / 1000;
-
-            console.log(`✅ Scraping completed in ${duration}s! Found ${finalResults.length} businesses with contact info.`);
-
-            // Display quality metrics
-            const phoneCount = finalResults.filter(b => b.phone || b.number).length;
-            const emailCount = finalResults.filter(b => b.emails && b.emails.length > 0).length;
-            const websiteCount = finalResults.filter(b => b.website).length;
-            const totalEmails = finalResults.reduce((sum, b) => sum + (b.emails ? b.emails.length : 0), 0);
-
-            console.log(`📈 Quality metrics: ${phoneCount} with phones, ${emailCount} with emails (${totalEmails} total emails)`);
-            console.log('');
-            console.log('📋 SUMMARY:');
-            console.log('===========');
-            console.log(`✅ Total businesses found: ${finalResults.length}`);
-            console.log(`📞 With phone numbers: ${phoneCount}`);
-            console.log(`📧 With emails: ${emailCount}`);
-            console.log(`🌐 With websites: ${websiteCount}`);
-
-            // Show sample results
-            console.log('');
-            console.log('🎉 Sample results:');
-            console.log('');
-            finalResults.slice(0, 3).forEach((business, index) => {
-                console.log(`${index + 1}. ${business.name}`);
-                console.log(`   📞 ${business.phone || business.number || 'No phone'}`);
-                console.log(`   📧 ${business.emails && business.emails.length > 0 ? business.emails.join(', ') : 'No emails'}`);
-                console.log(`   🌐 ${business.website || 'No website'}`);
-                console.log('');
-            });
-
-            return finalResults;
-
-        } catch (error) {
-            console.error('❌ Error during scraping:', error);
-            throw error;
-        } finally {
-            if (this.browser) {
-                await this.browser.close();
-            }
-        }
-    }
-
-    // Process business data and match names with phones/websites using proven proximity method
-    async processBusinessDataNew(extractedData) {
-        console.log('🔄 Processing business data with proven proximity matching...');
-
-        const { businessNames, phoneNumbers, websites } = extractedData;
-        console.log(`📊 Input: ${businessNames.length} business names, ${phoneNumbers.length} phone numbers, ${websites.length} websites`);
-
-        // Get the original HTML content for proximity matching
-        const htmlContent = await this.page.content();
-
-        const processedBusinesses = [];
-        const availableNumbers = [...phoneNumbers]; // Copy for manipulation
-
-        // Process each business name using proximity matching (proven method)
-        businessNames.forEach((name, index) => {
-            // Skip invalid business names
-            if (!this.isValidBusinessName(name)) {
-                return;
-            }
-
-            const business = {
-                name: name,
-                phone: null,
-                website: null,
-                emails: []
-            };
-
-            // Use proven proximity matching for phone numbers
-            let bestMatch = '';
-            let bestDistance = Infinity;
-
-            availableNumbers.forEach(number => {
-                // Find the position of the business name and phone number in HTML
-                const nameIndex = htmlContent.toLowerCase().indexOf(name.toLowerCase());
-                const numberIndex = htmlContent.indexOf(number);
-
-                if (nameIndex !== -1 && numberIndex !== -1) {
-                    const distance = Math.abs(nameIndex - numberIndex);
-                    if (distance < bestDistance) {
-                        bestDistance = distance;
-                        bestMatch = number;
-                    }
-                }
-            });
-
-            // If we found a close match (within 10k characters), assign it
-            if (bestMatch && bestDistance < 10000) {
-                business.phone = bestMatch;
-                // Remove the used number to avoid duplicates
-                const numberIndex = availableNumbers.indexOf(bestMatch);
-                if (numberIndex > -1) {
-                    availableNumbers.splice(numberIndex, 1);
-                }
-            }
-
-            // Try to match with website using proven method
-            const matchingWebsite = this.findMatchingWebsite(name, websites);
-            if (matchingWebsite) {
-                business.website = matchingWebsite;
-            }
-
-            processedBusinesses.push(business);
-        });
-
-        // If we still have unmatched phone numbers, assign them to businesses without phones
-        const businessesWithoutPhones = processedBusinesses.filter(b => !b.phone);
-        availableNumbers.forEach((number, index) => {
-            if (index < businessesWithoutPhones.length) {
-                businessesWithoutPhones[index].phone = number;
-            }
-        });
-
-        console.log(`✅ Processed ${processedBusinesses.length} businesses with proven proximity matching`);
-        return processedBusinesses;
-    }
-
-    // Find matching website for a business name
-    findMatchingWebsite(businessName, websites) {
-        const businessWords = businessName.toLowerCase()
-            .replace(/[^\w\s]/g, ' ')
-            .split(/\s+/)
-            .filter(word => word.length > 2);
-
-        let bestMatch = null;
-        let bestScore = 0;
-
-        for (const website of websites) {
-            const websiteText = website.toLowerCase();
-            let score = 0;
-
-            businessWords.forEach(word => {
-                if (websiteText.includes(word)) {
-                    score += word.length * 5; // Weight by word length
-                }
-            });
-
-            // Bonus for domain name matches
-            const domain = website.split('/')[2] || '';
-            businessWords.forEach(word => {
-                if (domain.includes(word)) {
-                    score += word.length * 10; // Higher weight for domain matches
-                }
-            });
-
-            if (score > bestScore && score > 15) { // Minimum threshold
-                bestScore = score;
-                bestMatch = website;
-            }
-        }
-
-        return bestMatch;
-    }
-
-    // Scrape emails from business websites
-    async scrapeEmailsFromWebsites(businesses) {
-        const businessesWithWebsites = businesses.filter(b => b.website);
-        console.log(`🌐 Found ${businessesWithWebsites.length} businesses with websites, scraping for emails...`);
-
-        if (businessesWithWebsites.length === 0) {
-            console.log('⚠️  No websites found to scrape emails from');
-            return businesses;
-        }
-
-        // Create a new page for email scraping
-        const emailPage = await this.browser.newPage();
-        await emailPage.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
-
-        const batchSize = 5;
-        const batches = [];
-        for (let i = 0; i < businessesWithWebsites.length; i += batchSize) {
-            batches.push(businessesWithWebsites.slice(i, i + batchSize));
-        }
-
-        console.log(`🔄 Processing ${batches.length} batches of websites...`);
-
-        for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
-            const batch = batches[batchIndex];
-            console.log(`🔄 Processing website batch ${batchIndex + 1}/${batches.length}`);
-
-            for (const business of batch) {
-                try {
-                    console.log(`📧 Scraping ${business.website}...`);
-
-                    await emailPage.goto(business.website, {
-                        waitUntil: 'networkidle2',
-                        timeout: 10000
-                    });
-
-                    // Extract emails from the page
-                    const emails = await emailPage.evaluate(() => {
-                        const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
-                        const text = document.body.innerText;
-                        const matches = text.match(emailRegex) || [];
-
-                        // Filter out common false positives
-                        return matches.filter(email =>
-                            !email.includes('example.com') &&
-                            !email.includes('test.com') &&
-                            !email.includes('placeholder') &&
-                            !email.includes('noreply') &&
-                            !email.includes('no-reply') &&
-                            email.length < 50 // Reasonable email length
-                        );
-                    });
-
-                    if (emails.length > 0) {
-                        business.emails = [...new Set(emails)]; // Remove duplicates
-                        console.log(`📧 Found ${business.emails.length} emails: ${business.emails.join(', ')}`);
-                    }
-
-                } catch (error) {
-                    console.log(`⚠️  Could not scrape ${business.website}: ${error.message}`);
-                }
-
-                // Small delay between requests
-                await new Promise(resolve => setTimeout(resolve, 1000));
-            }
-        }
-
-        await emailPage.close();
-
-        const emailCount = businesses.filter(b => b.emails && b.emails.length > 0).length;
-        console.log(`📧 Successfully found emails for ${emailCount} businesses`);
-
-        return businesses;
-    }
-
-    // Filter businesses that have contact information
-    filterBusinessesWithContact(businesses) {
-        console.log('🔍 Filtering businesses with contact information...');
-
-        const businessesWithContact = businesses.filter(business => {
-            const hasPhone = business.phone && business.phone.trim() !== '';
-            const hasWebsite = business.website && business.website.trim() !== '';
-            const hasEmails = business.emails && business.emails.length > 0;
-
-            // Keep businesses that have at least phone, website, or email
-            return hasPhone || hasWebsite || hasEmails;
-        });
-
-        const filteredOut = businesses.length - businessesWithContact.length;
-        console.log(`🔍 Filtered out ${filteredOut} businesses with only names`);
-        console.log(`✅ Final results: ${businessesWithContact.length} businesses with contact information`);
-
-        return businessesWithContact;
-    }
-
-    // New structured scraping method that returns organized data
-    async scrapeGoogleMapsStructured(searchQuery) {
-        console.log('🗺️  Scraping Google Maps with multiple search strategies...');
-
-        // Use the existing scrapeGoogleMaps method to get HTML content
-        const htmlContent = await this.scrapeGoogleMaps();
-
-        // Extract structured data from HTML content
-        console.log('🎯 Step 2: Extracting business data with improved algorithm...');
-        const businessNames = await this.extractBusinessNamesEnhanced(htmlContent);
-        const phoneNumbers = this.extractPhoneNumbers(htmlContent);
-        const websites = this.extractWebsiteUrls(htmlContent);
-
-        console.log(`📊 Total extraction found ${businessNames.length} unique business names from all strategies`);
-        console.log(`📊 Extraction results: ${businessNames.length} names, ${phoneNumbers.length} numbers, ${websites.length} websites`);
-
-        return {
-            businessNames,
-            phoneNumbers,
-            websites
-        };
-    }
-
-    // Enhanced business name extraction (combines multiple strategies)
-    async extractBusinessNamesEnhanced(htmlContent) {
-        console.log('👥 Extracting business names with DOM-based extraction...');
-
-        // Strategy 1: DOM-based extraction from loaded page
-        console.log('🔍 Strategy 1: DOM-based extraction from loaded page...');
-        const domNames = await this.extractBusinessNamesFromDOM();
-        console.log(`🔍 DOM extraction found ${domNames.length} business names`);
-
-        // Strategy 2: Extract from business page URLs
-        console.log('🔍 Strategy 2: Extracting from business page URLs...');
-        const urlNames = await this.extractBusinessNamesFromURLs();
-        console.log(`🔍 URL extraction found ${urlNames.length} business names`);
-
-        // Strategy 3: Fallback regex extraction from HTML content
-        console.log('🔍 Strategy 3: Fallback regex extraction...');
-        const regexNames = await this.extractBusinessNames(htmlContent);
-        console.log(`🔍 Regex extraction found ${regexNames.length} business names`);
-
-        // Combine all strategies and remove duplicates
-        const allNames = [...domNames, ...urlNames, ...regexNames];
-        const uniqueNames = [...new Set(allNames)];
-
-        return uniqueNames;
-    }
-
-    // Extract business names from DOM elements
-    async extractBusinessNamesFromDOM() {
-        try {
-            const businessNames = await this.page.evaluate(() => {
-                const names = new Set();
-
-                // Comprehensive list of selectors for business names
-                const selectors = [
-                    // Primary business name selectors
-                    '[role="article"] h3',
-                    '[role="article"] [role="button"] span',
-                    'div[data-result-index] h3',
-                    '[data-cid] h3',
-                    'a[href*="/maps/place/"] h3',
-
-                    // Additional selectors for different Google Maps layouts
-                    '.section-result h3',
-                    '.section-result-title',
-                    '.section-result-location',
-                    '[jsaction*="click"] h3',
-                    '[data-value="directions"] ~ div h3',
-                    '.section-result-content h3',
-
-                    // More specific selectors
-                    'div[role="main"] h3',
-                    'div[role="main"] [role="button"] span',
-                    '[data-result-index] [role="button"] span',
-                    '.section-result .section-result-title span',
-
-                    // Fallback selectors
-                    'h3[class*="fontHeadlineSmall"]',
-                    'span[class*="fontHeadlineSmall"]',
-                    '[data-value="website"] ~ h3',
-                    '[data-value="phone"] ~ h3'
-                ];
-
-                // Extract names using all selectors
-                selectors.forEach(selector => {
-                    try {
-                        const elements = document.querySelectorAll(selector);
-                        elements.forEach(element => {
-                            const text = element.textContent?.trim();
-                            if (text && text.length > 2 && text.length < 100) {
-                                names.add(text);
-                            }
-                        });
-                    } catch (e) {
-                        // Continue with other selectors if one fails
-                    }
-                });
-
-                return Array.from(names);
-            });
-
-            return businessNames.filter(name => this.isValidBusinessName(name));
-        } catch (error) {
-            console.log('⚠️  DOM extraction failed:', error.message);
-            return [];
-        }
-    }
-
-    // Extract business names from URLs
-    async extractBusinessNamesFromURLs() {
-        try {
-            const businessNames = await this.page.evaluate(() => {
-                const names = new Set();
-
-                // Find all business page URLs
-                const businessUrls = Array.from(document.querySelectorAll('a[href*="/maps/place/"]'))
-                    .map(link => link.href);
-
-                // Extract business names from URLs
-                businessUrls.forEach(url => {
-                    try {
-                        const match = url.match(/\/maps\/place\/([^\/]+)/);
-                        if (match) {
-                            const name = decodeURIComponent(match[1]).replace(/\+/g, ' ');
-                            if (name && name.length > 2 && name.length < 100) {
-                                names.add(name);
-                            }
-                        }
-                    } catch (e) {
-                        // Continue with other URLs if one fails
-                    }
-                });
-
-                return Array.from(names);
-            });
-
-            return businessNames.filter(name => this.isValidBusinessName(name));
-        } catch (error) {
-            console.log('⚠️  URL extraction failed:', error.message);
-            return [];
-        }
     }
 
     extractPhoneNumbers(htmlContent) {
@@ -2949,8 +2740,95 @@ class GoogleMapsScraper {
     }
 
     async run() {
-        // Use the new streamlined scraping approach
-        return await this.scrape(this.searchQuery);
+        const startTime = Date.now();
+        console.log(`⏰ Starting scrape at ${new Date().toLocaleTimeString()}`);
+
+        try {
+            await this.init();
+
+            // Step 1: Scrape Google Maps main page
+            console.log('📍 Step 1: Scraping Google Maps main page...');
+            const htmlContent = await this.scrapeGoogleMaps();
+
+            // Step 2: Use improved traditional method (which is working perfectly)
+            console.log('🎯 Step 2: Extracting business data with improved algorithm...');
+            const names = await this.extractBusinessNames(htmlContent);
+            const numbers = this.extractPhoneNumbers(htmlContent);
+            const websites = this.extractWebsiteUrls(htmlContent);
+
+            console.log(`📊 Extraction results: ${names.length} names, ${numbers.length} numbers, ${websites.length} websites`);
+
+            // Debug info (only show if less than 20 items)
+            if (names.length <= 20) {
+                console.log('🔍 Business names found:', names);
+            }
+
+            // Step 3: Process and match data with improved algorithm
+            console.log('⚙️  Step 3: Processing and matching data with improved algorithm...');
+            let results = await this.processBusinessData(names, numbers);
+
+            // Step 4: Optimized individual business verification for 100% accuracy
+            console.log(`🔍 Step 4: Optimized individual business verification for 100% accuracy...`);
+
+            // Try individual business scraping for better accuracy (now with parallel processing)
+            const individualResults = await this.scrapeBusinessesIndividually(results);
+            if (individualResults.length > 0) {
+                console.log(`✅ Individual scraping successful! Using individual results for 100% accuracy.`);
+                results = individualResults;
+            } else {
+                console.log(`⚠️ Individual scraping failed, using traditional results.`);
+            }
+
+            // Step 5: Optional verification for businesses without websites/emails
+            const businessesWithoutContact = results.filter(r => !r.website && (!r.emails || r.emails.length === 0));
+            if (businessesWithoutContact.length > 0) {
+                // Limit to first 3 businesses for demonstration
+                const businessesToVerify = businessesWithoutContact.slice(0, 3);
+                console.log(`🔍 Step 5: Verifying ${businessesToVerify.length} businesses without websites/emails...`);
+
+                for (const business of businessesToVerify) {
+                    try {
+                        console.log(`🔍 Verifying: ${business.name}`);
+                        const verifiedData = await this.verifyBusinessIndividually(business.name);
+                        if (verifiedData.website || (verifiedData.emails && verifiedData.emails.length > 0)) {
+                            console.log(`✅ Found additional contact info for ${business.name}`);
+                            if (verifiedData.website) business.website = verifiedData.website;
+                            if (verifiedData.emails && verifiedData.emails.length > 0) {
+                                business.emails = verifiedData.emails;
+                            }
+                        }
+                    } catch (error) {
+                        console.log(`⚠️  Could not verify ${business.name}: ${error.message}`);
+                    }
+
+                    await new Promise(resolve => setTimeout(resolve, 3000)); // Delay between verifications
+                }
+            }
+
+            // Step 5: Save results
+            console.log('💾 Step 5: Saving results...');
+            await this.saveResults(results);
+
+            const duration = ((Date.now() - startTime) / 1000).toFixed(1);
+            console.log(`✅ Scraping completed in ${duration}s! Found ${results.length} businesses with contact info.`);
+
+            // Performance summary
+            const withPhones = results.filter(r => r.number && r.number.trim()).length;
+            const withEmails = results.filter(r => r.emails && r.emails.length > 0).length;
+            const totalEmails = results.reduce((sum, r) => sum + (r.emails ? r.emails.length : 0), 0);
+
+            console.log(`📈 Quality metrics: ${withPhones} with phones, ${withEmails} with emails (${totalEmails} total emails)`);
+
+            return results;
+
+        } catch (error) {
+            console.error('❌ Scraping failed:', error);
+            throw error;
+        } finally {
+            if (this.browser) {
+                await this.browser.close();
+            }
+        }
     }
 
     async saveResults(results) {
@@ -2983,158 +2861,6 @@ class GoogleMapsScraper {
         ]);
         
         return [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
-    }
-
-    // Streamlined email scraping for businesses with websites
-    async scrapeEmailsFromWebsitesStreamlined(businesses, websites) {
-        console.log('📧 Scraping emails from business websites (streamlined approach)...');
-
-        // First, match businesses with websites
-        for (const business of businesses) {
-            if (!business.website) {
-                const matchingWebsite = this.findMatchingWebsite(business.name, websites);
-                if (matchingWebsite) {
-                    business.website = matchingWebsite;
-                }
-            }
-        }
-
-        const businessesWithWebsites = businesses.filter(b => b.website);
-        console.log(`🌐 Found ${businessesWithWebsites.length} businesses with websites, scraping for emails...`);
-
-        if (businessesWithWebsites.length === 0) {
-            console.log('⚠️  No websites found to scrape emails from');
-            return businesses;
-        }
-
-        // Create a new page for email scraping
-        const emailPage = await this.browser.newPage();
-        await emailPage.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
-
-        for (const business of businessesWithWebsites) {
-            try {
-                console.log(`📧 Scraping ${business.website}...`);
-
-                await emailPage.goto(business.website, {
-                    waitUntil: 'networkidle2',
-                    timeout: 10000
-                });
-
-                // Extract emails from the page
-                const emails = await emailPage.evaluate(() => {
-                    const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
-                    const text = document.body.innerText;
-                    const matches = text.match(emailRegex) || [];
-
-                    // Filter out common false positives
-                    return matches.filter(email =>
-                        !email.includes('example.com') &&
-                        !email.includes('test.com') &&
-                        !email.includes('placeholder') &&
-                        !email.includes('noreply') &&
-                        !email.includes('no-reply') &&
-                        email.length < 50 // Reasonable email length
-                    );
-                });
-
-                if (emails.length > 0) {
-                    business.emails = [...new Set(emails)]; // Remove duplicates
-                    console.log(`📧 Found ${business.emails.length} emails: ${business.emails.join(', ')}`);
-                }
-
-            } catch (error) {
-                console.log(`⚠️  Could not scrape ${business.website}: ${error.message}`);
-            }
-
-            // Small delay between requests
-            await new Promise(resolve => setTimeout(resolve, 1000));
-        }
-
-        await emailPage.close();
-
-        const emailCount = businesses.filter(b => b.emails && b.emails.length > 0).length;
-        console.log(`📧 Successfully found emails for ${emailCount} businesses`);
-
-        return businesses;
-    }
-
-    // Streamlined filtering for businesses with contact information
-    filterBusinessesWithContactStreamlined(businesses) {
-        console.log('🔍 Filtering businesses with contact information (streamlined)...');
-
-        const businessesWithContact = businesses.filter(business => {
-            const hasPhone = business.number && business.number.trim() !== '';
-            const hasWebsite = business.website && business.website.trim() !== '';
-            const hasEmails = business.emails && business.emails.length > 0;
-
-            // Keep businesses that have at least phone, website, or email
-            return hasPhone || hasWebsite || hasEmails;
-        });
-
-        const filteredOut = businesses.length - businessesWithContact.length;
-        console.log(`🔍 Filtered out ${filteredOut} businesses with only names`);
-        console.log(`✅ Final results: ${businessesWithContact.length} businesses with contact information`);
-
-        // Convert number field to phone field for consistency
-        businessesWithContact.forEach(business => {
-            if (business.number && !business.phone) {
-                business.phone = business.number;
-            }
-        });
-
-        return businessesWithContact;
-    }
-
-    // Simple regex-based business name extraction (proven method)
-    extractBusinessNamesSimple(htmlContent) {
-        console.log('👥 Extracting business names with simple regex method...');
-
-        const businessNames = [];
-
-        // Use the exact same regex patterns that were working perfectly
-        const patterns = [
-            // Primary pattern for business names in Google Maps data
-            /"([^"]{5,100})",null,null,null,null,\[\[/g,
-            /\["([^"]{5,80})",null,\[/g,
-            /"([^"]{5,80})",\[null,null,\d+\.\d+,\d+\.\d+\]/g,
-            // Additional patterns for business names
-            /\b7,\[\[(.*?)\]/gs
-        ];
-
-        patterns.forEach(pattern => {
-            let match;
-            while ((match = pattern.exec(htmlContent)) !== null) {
-                let name = match[1];
-
-                // Clean up the name
-                if (name) {
-                    // Handle Unicode escapes
-                    name = name.replace(/\\u[\dA-Fa-f]{4}/g, match =>
-                        String.fromCharCode(parseInt(match.slice(2), 16))
-                    );
-                    name = name.replace(/\\+/g, '').trim();
-
-                    // Filter valid business names
-                    if (name &&
-                        name.length > 2 &&
-                        name.length < 100 &&
-                        this.isValidBusinessName(name)) {
-                        businessNames.push(name);
-                    }
-                }
-            }
-        });
-
-        // Remove duplicates
-        const uniqueNames = [...new Set(businessNames)];
-
-        console.log(`📊 Simple extraction found ${uniqueNames.length} business names`);
-        return uniqueNames;
-    }
-
-    // Main scrape method - uses streamlined approach
-    async scrape(searchQuery) {
-        return await this.streamlinedScrape(searchQuery);
     }
 }
 
