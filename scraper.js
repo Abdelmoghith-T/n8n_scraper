@@ -68,34 +68,9 @@ class GoogleMapsScraper {
             await new Promise(resolve => setTimeout(resolve, 3000));
 
             // Get initial content
-            let content = await this.page.content();
+            const content = await this.page.content();
 
-            // Strategy 2: Try broader search terms to get more results
-            const searchTerms = this.generateSearchVariations(this.searchQuery);
-
-            for (let i = 0; i < Math.min(searchTerms.length, 2); i++) { // Try up to 2 additional searches
-                const searchTerm = searchTerms[i];
-                console.log(`🔍 Strategy ${i + 2}: Searching "${searchTerm}"...`);
-
-                try {
-                    const url = `https://www.google.com/maps/search/${encodeURIComponent(searchTerm)}`;
-                    await this.page.goto(url, { waitUntil: 'networkidle2', timeout: 20000 });
-                    await new Promise(resolve => setTimeout(resolve, 2000));
-
-                    // Quick scroll for additional results
-                    await this.scrollToLoadMore();
-                    await new Promise(resolve => setTimeout(resolve, 2000));
-
-                    // Append additional content
-                    const additionalContent = await this.page.content();
-                    content += '\n<!-- ADDITIONAL_SEARCH_CONTENT -->\n' + additionalContent;
-
-                } catch (error) {
-                    console.log(`⚠️  Additional search failed: ${error.message}`);
-                }
-            }
-
-            // Store the combined content
+            // Store the content
             this.storedHtmlContent = content;
             return content;
 
@@ -105,65 +80,238 @@ class GoogleMapsScraper {
         }
     }
 
-    // Generate search variations to find more results
-    generateSearchVariations(originalQuery) {
-        const variations = [];
 
-        // If the query contains specific terms, try broader versions
-        if (originalQuery.toLowerCase().includes('contrôle technique')) {
-            variations.push('visite technique Fès');
-            variations.push('centre contrôle technique Fès');
-        } else if (originalQuery.toLowerCase().includes('cours particuliers')) {
-            variations.push('soutien scolaire ' + this.extractLocation(originalQuery));
-            variations.push('professeur particulier ' + this.extractLocation(originalQuery));
-        }
 
-        return variations;
-    }
-
-    // Extract location from search query
-    extractLocation(query) {
-        const locations = ['Fès', 'Casablanca', 'Rabat', 'Marrakech', 'Agadir', 'Tanger', 'Meknès', 'Oujda'];
-        for (const location of locations) {
-            if (query.includes(location)) {
-                return location;
-            }
-        }
-        return '';
-    }
-
-    // Extract city from search query for individual business scraping
+    // Extract city or country from search query for individual business scraping
+    // Priority: Cities first (more specific), then countries (broader scope), then fallback to Morocco
     extractCityFromQuery(query) {
         // Normalize query by removing accents and converting to lowercase
         const queryLower = query.toLowerCase()
             .normalize('NFD')
             .replace(/[\u0300-\u036f]/g, ''); // Remove diacritics/accents
 
-        // Comprehensive list of Moroccan cities with variations
-        const cities = [
-            { names: ['fès', 'fes'], canonical: 'Fès' },
-            { names: ['casablanca', 'casa'], canonical: 'Casablanca' },
-            { names: ['rabat'], canonical: 'Rabat' },
-            { names: ['marrakech', 'marrakesh'], canonical: 'Marrakech' },
-            { names: ['agadir'], canonical: 'Agadir' },
-            { names: ['tanger', 'tangier'], canonical: 'Tanger' },
-            { names: ['meknès', 'meknes'], canonical: 'Meknès' },
-            { names: ['oujda'], canonical: 'Oujda' },
-            { names: ['tétouan', 'tetouan'], canonical: 'Tétouan' },
-            { names: ['salé', 'sale'], canonical: 'Salé' },
-            { names: ['kenitra'], canonical: 'Kenitra' },
-            { names: ['el jadida'], canonical: 'El Jadida' },
-            { names: ['beni mellal'], canonical: 'Beni Mellal' },
-            { names: ['nador'], canonical: 'Nador' },
-            { names: ['khouribga'], canonical: 'Khouribga' },
-            { names: ['settat'], canonical: 'Settat' },
-            { names: ['mohammedia'], canonical: 'Mohammedia' },
-            { names: ['larache'], canonical: 'Larache' },
-            { names: ['ksar el kebir'], canonical: 'Ksar El Kebir' },
-            { names: ['berrechid'], canonical: 'Berrechid' }
+        // Countries with variations (check first for broader scope)
+        const countries = [
+            { names: ['afghanistan', 'afganistan', 'république islamique d\'afghanistan'], canonical: 'Afghanistan' },
+            { names: ['albania', 'albanie'], canonical: 'Albania' },
+            { names: ['algeria', 'algerie', 'algérie'], canonical: 'Algeria' },
+            { names: ['andorra', 'andorre'], canonical: 'Andorra' },
+            { names: ['angola'], canonical: 'Angola' },
+            { names: ['antigua and barbuda', 'antigua-et-barbuda'], canonical: 'Antigua and Barbuda' },
+            { names: ['argentina', 'argentine'], canonical: 'Argentina' },
+            { names: ['armenia', 'arménie'], canonical: 'Armenia' },
+            { names: ['australia', 'australie'], canonical: 'Australia' },
+            { names: ['austria', 'autriche'], canonical: 'Austria' },
+            { names: ['azerbaijan', 'azerbaïdjan'], canonical: 'Azerbaijan' },
+            { names: ['bahamas', 'les bahamas'], canonical: 'Bahamas' },
+            { names: ['bahrain', 'bahreïn'], canonical: 'Bahrain' },
+            { names: ['bangladesh', 'bangladesh'], canonical: 'Bangladesh' },
+            { names: ['barbados', 'barbade'], canonical: 'Barbados' },
+            { names: ['belarus', 'biélorussie'], canonical: 'Belarus' },
+            { names: ['belgium', 'belgique'], canonical: 'Belgium' },
+            { names: ['belize'], canonical: 'Belize' },
+            { names: ['benin', 'bénin'], canonical: 'Benin' },
+            { names: ['bhutan', 'bhoutan'], canonical: 'Bhutan' },
+            { names: ['bolivia', 'bolivie'], canonical: 'Bolivia' },
+            { names: ['bosnia and herzegovina', 'bosnie-herzégovine'], canonical: 'Bosnia and Herzegovina' },
+            { names: ['botswana'], canonical: 'Botswana' },
+            { names: ['brazil', 'brésil'], canonical: 'Brazil' },
+            { names: ['brunei', 'brunéi'], canonical: 'Brunei' },
+            { names: ['bulgaria', 'bulgarie'], canonical: 'Bulgaria' },
+            { names: ['burkina faso'], canonical: 'Burkina Faso' },
+            { names: ['burundi'], canonical: 'Burundi' },
+            { names: ['cambodia', 'cambodge'], canonical: 'Cambodia' },
+            { names: ['cameroon', 'cameroun'], canonical: 'Cameroon' },
+            { names: ['canada'], canonical: 'Canada' },
+            { names: ['cape verde', 'cap-vert'], canonical: 'Cape Verde' },
+            { names: ['central african republic', 'république centrafricaine'], canonical: 'Central African Republic' },
+            { names: ['chad', 'tchad'], canonical: 'Chad' },
+            { names: ['chile', 'chili'], canonical: 'Chile' },
+            { names: ['china', 'chine'], canonical: 'China' },
+            { names: ['colombia', 'colombie'], canonical: 'Colombia' },
+            { names: ['comoros', 'comores'], canonical: 'Comoros' },
+            { names: ['congo', 'république du congo'], canonical: 'Congo' },
+            { names: ['costa rica'], canonical: 'Costa Rica' },
+            { names: ['croatia', 'croatie'], canonical: 'Croatia' },
+            { names: ['cuba'], canonical: 'Cuba' },
+            { names: ['cyprus', 'chypre'], canonical: 'Cyprus' },
+            { names: ['czech republic', 'tchéquie', 'république tchèque'], canonical: 'Czech Republic' },
+            { names: ['denmark', 'danemark'], canonical: 'Denmark' },
+            { names: ['djibouti'], canonical: 'Djibouti' },
+            { names: ['dominica', 'dominique'], canonical: 'Dominica' },
+            { names: ['dominican republic', 'république dominicaine'], canonical: 'Dominican Republic' },
+            { names: ['ecuador', 'équateur'], canonical: 'Ecuador' },
+            { names: ['egypt', 'égypte'], canonical: 'Egypt' },
+            { names: ['el salvador'], canonical: 'El Salvador' },
+            { names: ['equatorial guinea', 'guinée équatoriale'], canonical: 'Equatorial Guinea' },
+            { names: ['eritrea', 'érythrée'], canonical: 'Eritrea' },
+            { names: ['estonia', 'estonie'], canonical: 'Estonia' },
+            { names: ['eswatini', 'swaziland'], canonical: 'Eswatini' },
+            { names: ['ethiopia', 'éthiopie'], canonical: 'Ethiopia' },
+            { names: ['fiji', 'fidji'], canonical: 'Fiji' },
+            { names: ['finland', 'finlande'], canonical: 'Finland' },
+            { names: ['france'], canonical: 'France' },
+            { names: ['gabon'], canonical: 'Gabon' },
+            { names: ['gambia', 'gambie'], canonical: 'Gambia' },
+            { names: ['georgia', 'géorgie'], canonical: 'Georgia' },
+            { names: ['germany', 'allemagne'], canonical: 'Germany' },
+            { names: ['ghana'], canonical: 'Ghana' },
+            { names: ['greece', 'grèce'], canonical: 'Greece' },
+            { names: ['grenada', 'grenade'], canonical: 'Grenada' },
+            { names: ['guatemala'], canonical: 'Guatemala' },
+            { names: ['guinea', 'guinée'], canonical: 'Guinea' },
+            { names: ['guinea-bissau', 'guinée-bissau'], canonical: 'Guinea-Bissau' },
+            { names: ['guyana'], canonical: 'Guyana' },
+            { names: ['haiti', 'haïti'], canonical: 'Haiti' },
+            { names: ['honduras'], canonical: 'Honduras' },
+            { names: ['hungary', 'hongrie'], canonical: 'Hungary' },
+            { names: ['iceland', 'islande'], canonical: 'Iceland' },
+            { names: ['india', 'inde'], canonical: 'India' },
+            { names: ['indonesia', 'indonésie'], canonical: 'Indonesia' },
+            { names: ['iran', 'iran'], canonical: 'Iran' },
+            { names: ['iraq', 'irak'], canonical: 'Iraq' },
+            { names: ['ireland', 'irlande'], canonical: 'Ireland' },
+            { names: ['israel', 'israël'], canonical: 'Israel' },
+            { names: ['italy', 'italie'], canonical: 'Italy' },
+            { names: ['jamaica', 'jamaïque'], canonical: 'Jamaica' },
+            { names: ['japan', 'japon'], canonical: 'Japan' },
+            { names: ['jordan', 'jordanie'], canonical: 'Jordan' },
+            { names: ['kazakhstan', 'kazakhstan'], canonical: 'Kazakhstan' },
+            { names: ['kenya'], canonical: 'Kenya' },
+            { names: ['kiribati'], canonical: 'Kiribati' },
+            { names: ['kuwait', 'koweït'], canonical: 'Kuwait' },
+            { names: ['kyrgyzstan', 'kirghizistan'], canonical: 'Kyrgyzstan' },
+            { names: ['laos', 'république démocratique populaire lao'], canonical: 'Laos' },
+            { names: ['latvia', 'lettonie'], canonical: 'Latvia' },
+            { names: ['lebanon', 'liban'], canonical: 'Lebanon' },
+            { names: ['lesotho'], canonical: 'Lesotho' },
+            { names: ['liberia'], canonical: 'Liberia' },
+            { names: ['libya', 'libye'], canonical: 'Libya' },
+            { names: ['liechtenstein'], canonical: 'Liechtenstein' },
+            { names: ['lithuania', 'lituanie'], canonical: 'Lithuania' },
+            { names: ['luxembourg'], canonical: 'Luxembourg' },
+            { names: ['madagascar'], canonical: 'Madagascar' },
+            { names: ['malawi'], canonical: 'Malawi' },
+            { names: ['malaysia', 'malaisie'], canonical: 'Malaysia' },
+            { names: ['maldives'], canonical: 'Maldives' },
+            { names: ['mali'], canonical: 'Mali' },
+            { names: ['malta', 'malte'], canonical: 'Malta' },
+            { names: ['marshall islands', 'îles marshall'], canonical: 'Marshall Islands' },
+            { names: ['mauritania', 'mauritanie'], canonical: 'Mauritania' },
+            { names: ['mauritius', 'maurice'], canonical: 'Mauritius' },
+            { names: ['mexico', 'mexique'], canonical: 'Mexico' },
+            { names: ['micronesia', 'micronésie'], canonical: 'Micronesia' },
+            { names: ['moldova', 'moldavie'], canonical: 'Moldova' },
+            { names: ['monaco'], canonical: 'Monaco' },
+            { names: ['mongolia', 'mongolie'], canonical: 'Mongolia' },
+            { names: ['montenegro', 'monténégro'], canonical: 'Montenegro' },
+            { names: ['morocco', 'maroc', 'royaume du maroc'], canonical: 'Morocco' },
+            { names: ['mozambique'], canonical: 'Mozambique' },
+            { names: ['myanmar', 'birmanie'], canonical: 'Myanmar' },
+            { names: ['namibia', 'namibie'], canonical: 'Namibia' },
+            { names: ['nauru'], canonical: 'Nauru' },
+            { names: ['nepal', 'népal'], canonical: 'Nepal' },
+            { names: ['netherlands', 'pays-bas'], canonical: 'Netherlands' },
+            { names: ['new zealand', 'nouvelle-zélande'], canonical: 'New Zealand' },
+            { names: ['nicaragua'], canonical: 'Nicaragua' },
+            { names: ['niger'], canonical: 'Niger' },
+            { names: ['nigeria', 'nigéria'], canonical: 'Nigeria' },
+            { names: ['north korea', 'corée du nord'], canonical: 'North Korea' },
+            { names: ['north macedonia', 'macédoine du nord'], canonical: 'North Macedonia' },
+            { names: ['norway', 'norvège'], canonical: 'Norway' },
+            { names: ['oman'], canonical: 'Oman' },
+            { names: ['pakistan'], canonical: 'Pakistan' },
+            { names: ['palau', 'palaos'], canonical: 'Palau' },
+            { names: ['palestine', 'état de palestine'], canonical: 'Palestine' },
+            { names: ['panama', 'panamá'], canonical: 'Panama' },
+            { names: ['papua new guinea', 'papouasie-nouvelle-guinée'], canonical: 'Papua New Guinea' },
+            { names: ['paraguay'], canonical: 'Paraguay' },
+            { names: ['peru', 'pérou'], canonical: 'Peru' },
+            { names: ['philippines', 'philippines'], canonical: 'Philippines' },
+            { names: ['poland', 'pologne'], canonical: 'Poland' },
+            { names: ['portugal'], canonical: 'Portugal' },
+            { names: ['qatar'], canonical: 'Qatar' },
+            { names: ['romania', 'roumanie'], canonical: 'Romania' },
+            { names: ['russia', 'russie'], canonical: 'Russia' },
+            { names: ['rwanda'], canonical: 'Rwanda' },
+            { names: ['saint kitts and nevis', 'saint-christophe-et-niévès'], canonical: 'Saint Kitts and Nevis' },
+            { names: ['saint lucia', 'sainte-lucie'], canonical: 'Saint Lucia' },
+            { names: ['saint vincent and the grenadines', 'saint-vincent-et-les grenadines'], canonical: 'Saint Vincent and the Grenadines' },
+            { names: ['samoa'], canonical: 'Samoa' },
+            { names: ['san marino'], canonical: 'San Marino' },
+            { names: ['sao tome and principe', 'sao tomé-et-principe'], canonical: 'Sao Tome and Principe' },
+            { names: ['saudi arabia', 'arabie saoudite'], canonical: 'Saudi Arabia' },
+            { names: ['senegal', 'sénégal'], canonical: 'Senegal' },
+            { names: ['serbia', 'serbie'], canonical: 'Serbia' },
+            { names: ['seychelles'], canonical: 'Seychelles' },
+            { names: ['sierra leone'], canonical: 'Sierra Leone' },
+            { names: ['singapore', 'singapour'], canonical: 'Singapore' },
+            { names: ['slovakia', 'slovaquie'], canonical: 'Slovakia' },
+            { names: ['slovenia', 'slovénie'], canonical: 'Slovenia' },
+            { names: ['solomon islands', 'îles salomon'], canonical: 'Solomon Islands' },
+            { names: ['somalia', 'somalie'], canonical: 'Somalia' },
+            { names: ['south africa', 'afrique du sud'], canonical: 'South Africa' },
+            { names: ['south sudan', 'soudan du sud'], canonical: 'South Sudan' },
+            { names: ['spain', 'espagne', 'españa'], canonical: 'Spain' },
+            { names: ['sri lanka', 'sri lanka'], canonical: 'Sri Lanka' },
+            { names: ['sudan', 'soudan'], canonical: 'Sudan' },
+            { names: ['suriname'], canonical: 'Suriname' },
+            { names: ['sweden', 'suède'], canonical: 'Sweden' },
+            { names: ['switzerland', 'suisse'], canonical: 'Switzerland' },
+            { names: ['syria', 'syrie'], canonical: 'Syria' },
+            { names: ['taiwan', 'taïwan'], canonical: 'Taiwan' },
+            { names: ['tajikistan', 'tadjikistan'], canonical: 'Tajikistan' },
+            { names: ['tanzania', 'tanzanie'], canonical: 'Tanzania' },
+            { names: ['thailand', 'thaïlande'], canonical: 'Thailand' },
+            { names: ['timor-leste', 'timor oriental'], canonical: 'Timor-Leste' },
+            { names: ['togo'], canonical: 'Togo' },
+            { names: ['tonga'], canonical: 'Tonga' },
+            { names: ['trinidad and tobago', 'trinité-et-tobago'], canonical: 'Trinidad and Tobago' },
+            { names: ['tunisia', 'tunisie'], canonical: 'Tunisia' },
+            { names: ['turkey', 'turquie'], canonical: 'Turkey' },
+            { names: ['turkmenistan', 'turkménistan'], canonical: 'Turkmenistan' },
+            { names: ['tuvalu'], canonical: 'Tuvalu' },
+            { names: ['uganda', 'ouganda'], canonical: 'Uganda' },
+            { names: ['ukraine'], canonical: 'Ukraine' },
+            { names: ['united arab emirates', 'émirats arabes unis'], canonical: 'United Arab Emirates' },
+            { names: ['united kingdom', 'royaume-uni'], canonical: 'United Kingdom' },
+            { names: ['united states', 'etats-unis', 'états-unis'], canonical: 'United States' },
+            { names: ['uruguay'], canonical: 'Uruguay' },
+            { names: ['uzbekistan', 'ouzbekistan'], canonical: 'Uzbekistan' },
+            { names: ['vanuatu'], canonical: 'Vanuatu' },
+            { names: ['vatican city', 'cité du vatican'], canonical: 'Vatican City' },
+            { names: ['venezuela'], canonical: 'Venezuela' },
+            { names: ['vietnam', 'viêt nam'], canonical: 'Vietnam' },
+            { names: ['yemen', 'yémen'], canonical: 'Yemen' },
+            { names: ['zambia', 'zambie'], canonical: 'Zambia' },
+            { names: ['zimbabwe'], canonical: 'Zimbabwe' }
         ];
 
-        // Check for city names in the query using word boundaries for precise matching
+        // Comprehensive list of Moroccan cities with variations
+        const cities = [
+            { names: ['casablanca', 'casa'], canonical: 'Casablanca' },
+            { names: ['rabat'], canonical: 'Rabat' },
+            { names: ['fes', 'fès', 'fez'], canonical: 'Fès' },
+            { names: ['marrakech', 'marrakesh', 'murakush'], canonical: 'Marrakech' },
+            { names: ['tanger', 'tangier', 'tangiers'], canonical: 'Tanger' },
+            { names: ['meknes', 'meknès'], canonical: 'Meknès' },
+            { names: ['agadir'], canonical: 'Agadir' },
+            { names: ['oujda'], canonical: 'Oujda' },
+            { names: ['kenitra', 'kénitra'], canonical: 'Kénitra' },
+            { names: ['tétouan', 'tetouan'], canonical: 'Tétouan' },
+            { names: ['essaouira', 'mogador'], canonical: 'Essaouira' },
+            { names: ['ouarzazate', 'warzazat'], canonical: 'Ouarzazate' },
+            { names: ['chefchaouen', 'chaouen'], canonical: 'Chefchaouen' },
+            { names: ['laayoune', 'el aaiun', 'el aaiún'], canonical: 'Laâyoune' },
+            { names: ['taroudant'], canonical: 'Taroudant' },
+            { names: ['safi', 'asfi'], canonical: 'Safi' },
+            { names: ['errachidia'], canonical: 'Errachidia' },
+            { names: ['nador'], canonical: 'Nador' },
+            { names: ['guelmim'], canonical: 'Guelmim' },
+            { names: ['dakhla', 'ad dakhla'], canonical: 'Dakhla' }
+        ];
+
+        // First, check for specific cities (more precise)
         for (const city of cities) {
             for (const name of city.names) {
                 // Normalize city name for comparison (remove accents)
@@ -180,8 +328,72 @@ class GoogleMapsScraper {
             }
         }
 
-        // If no specific city found, return Morocco as fallback
-        console.log(`🏙️  No specific city detected in query: "${query}", using Morocco as fallback`);
+        // Then check for countries (broader scope)
+        for (const country of countries) {
+            for (const name of country.names) {
+                // Normalize country name for comparison (remove accents)
+                const normalizedName = name.toLowerCase()
+                    .normalize('NFD')
+                    .replace(/[\u0300-\u036f]/g, '');
+
+                // Use word boundaries to ensure we match complete words only
+                const regex = new RegExp(`\\b${normalizedName.replace(/\s+/g, '\\s+')}\\b`, 'i');
+                if (regex.test(queryLower)) {
+                    console.log(`🌍 Detected country: ${country.canonical} from query: "${query}"`);
+                    return country.canonical;
+                }
+            }
+        }
+
+        // Try to extract city or country from common patterns like "in [location]" or "[service] [location]"
+        const patterns = [
+            /\bin\s+([a-zA-Z\s]+)$/i,  // "web designers in Fes"
+            /\s([a-zA-Z\s]+)$/i        // "Concepteur de sites Web fes" or "restaurants Morocco"
+        ];
+
+        for (const pattern of patterns) {
+            const match = query.match(pattern);
+            if (match) {
+                const potentialLocation = match[1].trim();
+
+                // First check if this matches any of our known cities
+                for (const city of cities) {
+                    for (const name of city.names) {
+                        const normalizedCityName = name.toLowerCase()
+                            .normalize('NFD')
+                            .replace(/[\u0300-\u036f]/g, '');
+                        const normalizedPotentialLocation = potentialLocation.toLowerCase()
+                            .normalize('NFD')
+                            .replace(/[\u0300-\u036f]/g, '');
+
+                        if (normalizedCityName === normalizedPotentialLocation) {
+                            console.log(`🏙️  Detected city: ${city.canonical} from pattern match in query: "${query}"`);
+                            return city.canonical;
+                        }
+                    }
+                }
+
+                // Then check if this matches any of our known countries
+                for (const country of countries) {
+                    for (const name of country.names) {
+                        const normalizedCountryName = name.toLowerCase()
+                            .normalize('NFD')
+                            .replace(/[\u0300-\u036f]/g, '');
+                        const normalizedPotentialLocation = potentialLocation.toLowerCase()
+                            .normalize('NFD')
+                            .replace(/[\u0300-\u036f]/g, '');
+
+                        if (normalizedCountryName === normalizedPotentialLocation) {
+                            console.log(`🌍 Detected country: ${country.canonical} from pattern match in query: "${query}"`);
+                            return country.canonical;
+                        }
+                    }
+                }
+            }
+        }
+
+        // If no specific city or country found, return Morocco as fallback
+        console.log(`🏙️  No specific city or country detected in query: "${query}", using Morocco as fallback`);
         return 'Morocco';
     }
 
@@ -2114,32 +2326,7 @@ class GoogleMapsScraper {
         return results;
     }
 
-    // Extract city name from search query for fallback locations
-    extractCityFromQuery(query) {
-        const moroccanCities = [
-            'Fès', 'Fez', 'Casablanca', 'Rabat', 'Marrakech', 'Agadir',
-            'Tanger', 'Meknès', 'Oujda', 'Kenitra', 'Tetouan', 'Safi',
-            'Mohammedia', 'Khouribga', 'Beni Mellal', 'El Jadida', 'Nador'
-        ];
 
-        const queryLower = query.toLowerCase();
-
-        for (const city of moroccanCities) {
-            if (queryLower.includes(city.toLowerCase())) {
-                return city;
-            }
-        }
-
-        // If no specific city found, try to extract from common patterns
-        const cityMatch = query.match(/\bin\s+([A-Za-z\s]+)$/i);
-        if (cityMatch) {
-            const extractedCity = cityMatch[1].trim();
-            // Capitalize first letter
-            return extractedCity.charAt(0).toUpperCase() + extractedCity.slice(1);
-        }
-
-        return 'Morocco'; // Ultimate fallback
-    }
 
     extractWebsiteUrls(htmlContent) {
         console.log('🌐 Extracting website URLs...');
