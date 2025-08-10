@@ -1,69 +1,37 @@
 {
-  "timestamp": "2025-08-08T21:36:52.410Z",
-  "searchQuery": "web designers fes",
-  "totalResults": 69,
+  "timestamp": "2025-08-10T01:28:36.836Z",
+  "searchQuery": "Concepteur de sites Web fes",
+  "totalResults": 40,
   "results": [
-    {
-      "name": "Fesweb",
-      "number": "0535-651358",
-      "website": "https://www.fesweb.net/contact.html",
-      "emails": []
-    },
-    {
-      "name": "Webeasy",
-      "number": "",
-      "website": "https://www.webeasy.pro/",
-      "emails": [
-        "hello@webeasy.pro"
-      ]
-    },
-    {
-      "name": "MyDigi",
-      "number": "0663-446461",
-      "website": "",
-      "emails": []
-    },
     {
       "name": "Webmarko",
       "number": "0661-511183",
       "website": "",
-      "emails": []
+      "emails": [],
+      "location": "Avenue Bir Anzarane Résidence Nour 1er Etage Bureau N 9 Centre Ville, 30000"
+    },
+    {
+      "name": "Fesweb",
+      "number": "0535-651358",
+      "website": "https://www.fesweb.net/contact.html",
+      "emails": [],
+      "location": "Imm9, Rehal Meskini (al mizane), Av des FAR, Fès 30000"
     },
     {
       "name": "Inventis",
-      "number": "0535-621314",
+      "number": "",
       "website": "http://inventis.ma/",
       "emails": [
         "contact@inventis.ma"
-      ]
+      ],
+      "location": "Rue TunisieFerm"
     },
     {
       "name": "isweb",
       "number": "0532-042566",
       "website": "",
-      "emails": []
-    },
-    {
-      "name": "Altek Technologies",
-      "number": "0535-731094",
-      "website": "https://www.altek.ma/",
-      "emails": [
-        "contact@altek.ma"
-      ]
-    },
-    {
-      "name": "Kreazin MEDIA",
-      "number": "0535-624041",
-      "website": "",
-      "emails": []
-    },
-    {
-      "name": "Arti web",
-      "number": "0532-432066",
-      "website": "http://www.artiweb.ma/",
-      "emails": [
-        "contact@artiweb.ma"
-      ]
+      "emails": [],
+      "location": "Bureau 4, 420 RUE LAIMOUNE, ETG 2, Fes 30000"
     },
     {
       "name": "Screenday",
@@ -71,7 +39,31 @@
       "website": "https://www.screenday.ma/contact-us/",
       "emails": [
         "Contact@Screenday.ma"
-      ]
+      ],
+      "location": "6EM ÉTAGE , BUREAU N 35, RÉSIDENCE LYOUBIA, ALLAL BEN ABDELLAH, Fès 30000"
+    },
+    {
+      "name": "Webeasy",
+      "number": "",
+      "website": "https://www.webeasy.pro/",
+      "emails": [
+        "hello@webeasy.pro"
+      ],
+      "location": "rue du 18 Novembre, Fès 30000"
+    },
+    {
+      "name": "Lewebeur",
+      "number": "0661-519014",
+      "website": "",
+      "emails": [],
+      "location": "Rue de Jordanie, Fès 30000"
+    },
+    {
+      "name": "Kreazin MEDIA",
+      "number": "0535-624041",
+      "website": "",
+      "emails": [],
+      "location": "Rue Mohamed El Hayani, Fès 30050"
     },
     {
       "name": "YKSolutions.ma",
@@ -79,27 +71,66 @@
       "website": "https://yksolutions.ma/",
       "emails": [
         "contact@yksolutions.ma"
-      ]
+      ],
+      "location": "APPT 9, 1 Rue de l'Algerie, Fès 30000"
     },
     {
-      "name": "Design & Branding",
-      "number": "0669-641709",
-      "website": "https://design-branding.com/",
-      "emails": []
+      "name": "Arti web",
+      "number": "0532-432066",
+      "website": "http://www.artiweb.ma/",
+      "emails": [],
+      "location": "ATLES, Fes 30000"
     },
     {
-      "name": "Digit-On agence digital à Fes",
-      "number": "0535-695908",
-      "website": "http://www.digiton.ma/",
-      "emails": [
-        "contact@digiton.ma"
-      ]
-    },
-    {
-      "name": "DELTA WEB",
+      "name": "emmarket.net",
       "number": "",
-      "website": "https://deltawebhost.com/",
-      "emails": []
+      "website": "https://emmarket.net/",
+      "emails": [],
+      "location": "ANCIENNE, Fès 35000"
+    },
+    {
+      "name": "Digital Développement",
+      "number": "",
+      "website": "https://www.digitaldeveloppement.net/",
+      "emails": [
+        "contact@digitaldeveloppement.net"
+      ],
+      "location": "Tanger | Création site web au Maroc"
+    },
+    {
+      "name": "Altek Technologies",
+      "number": "0535-731094",
+      "website": "https://www.altek.ma/",
+      "emails": [
+        "contact@altek.ma"
+      ],
+      "location": "ETG5 Bureau 34, 75 Rue Al Hoceima, Fès 30000"
+    },
+    {
+      "name": "Digital innovative solutions",
+      "number": "",
+      "website": "http://atlasdigital.ma/",
+      "emails": [
+        "contact@atlasdigital.ma"
+      ],
+      "location": "Casablanca"
+    },
+    {
+      "name": "Buzzmark",
+      "number": "0612-618830",
+      "website": "https://buzzmark.ma/",
+      "emails": [
+        "buzzmarkagency@gmail.com",
+        "Info@webmail.com"
+      ],
+      "location": "ESPACE JNAN, V.N ETG 3, BUREAU 9 Avenue Ahmed Chaouki، Fès 30000"
+    },
+    {
+      "name": "Aliendev",
+      "number": "0704-296967",
+      "website": "",
+      "emails": [],
+      "location": "SAADA2, Fès 31000"
     },
     {
       "name": "YO Digital - Agence Marketing Digital",
@@ -107,73 +138,68 @@
       "website": "https://yodigital.ma/contact",
       "emails": [
         "info@yodigital.ma"
-      ]
-    },
-    {
-      "name": "bakkaliweb Software design Morocco",
-      "number": "0661-690305",
-      "website": "http://www.bakkaliweb.com/",
-      "emails": [
-        "bakkaliweb@gmail.com",
-        "bakkalielmehdi903@gmail.com"
-      ]
-    },
-    {
-      "name": "Howdy Development",
-      "number": "0663-161785",
-      "website": "https://howdycode.com/contact.php",
-      "emails": [
-        "contact@howdycode.com"
-      ]
+      ],
+      "location": "à côté de la salle Nausika, 16 Av. Iben Athir, Fès 30000"
     },
     {
       "name": "Fouad Web",
       "number": "0675-942010",
       "website": "https://fouadweb.com/",
-      "emails": []
+      "emails": [],
+      "location": "30 Ave de Tamdart, Fes 30120"
     },
     {
-      "name": "Digital Développement",
-      "number": "0603-282812",
-      "website": "https://www.digitaldeveloppement.net/",
-      "emails": [
-        "contact@digitaldeveloppement.net"
-      ]
-    },
-    {
-      "name": "Creative Web",
-      "number": "0687-919443",
-      "website": "",
-      "emails": []
-    },
-    {
-      "name": "Clever Marketing | Agence de publicité & design graphique à Fès",
-      "number": "0660-003466",
-      "website": "https://clevermkt.com/book-meeting/",
-      "emails": [
-        "contact@clevermkt.com",
-        "Contact@clevermkt.com"
-      ]
-    },
-    {
-      "name": "Developer.ma",
+      "name": "DELTA WEB",
       "number": "",
-      "website": "https://developer.ma/",
+      "website": "https://deltawebhost.com/",
+      "emails": [],
+      "location": "75 Hay Wifaq Route Ain Smane, Fès 30020"
+    },
+    {
+      "name": "Howdy Development",
+      "number": "",
+      "website": "https://howdycode.com/",
       "emails": [
-        "friends@developer.ma"
-      ]
+        "contact@howdycode.com"
+      ],
+      "location": "Rue AssilahFerm"
+    },
+    {
+      "name": "Imag'in Creative : Agence Web, Publicité et Communication",
+      "number": "0535-653985",
+      "website": "",
+      "emails": [],
+      "location": "Bureaux Ibn Yassin à côté de l, Institut francais, Ave Lalla Hasnae, Fès 30050"
+    },
+    {
+      "name": "NewDev Maroc",
+      "number": "0535-650757",
+      "website": "https://www.newdevmaroc.com/",
+      "emails": [
+        "contact@newdevmaroc.com"
+      ],
+      "location": "2eme étage N°: 7, en face du café Marbella palace saada, Bureaux Rayane, Av St Louis, Fès"
+    },
+    {
+      "name": "Media Hero",
+      "number": "0679-850144",
+      "website": "",
+      "emails": [],
+      "location": "Résid Elmenzeh, 1er Ét N° 3, 96 Bd Abdellah Chafchaouni, Fès 30000"
     },
     {
       "name": "Agence Web GetDigital Fes",
       "number": "0668-564233",
       "website": "https://getdigital.ma/",
-      "emails": []
+      "emails": [],
+      "location": "espace El imane, Bureau numéro 16, 3eme étage, Rue Ibn Rochd، Fes 30000"
     },
     {
-      "name": "Digital innovative solutions",
-      "number": "0708-705332",
+      "name": "EawebAgent",
+      "number": "0626-662492",
       "website": "",
-      "emails": []
+      "emails": [],
+      "location": "app 3, Jnane fes, imm 39 rte imouzzar, Fes 30100"
     },
     {
       "name": "JM DIGITAL",
@@ -181,7 +207,8 @@
       "website": "https://jaime-digital.com/",
       "emails": [
         "contact@jaime-digital.com"
-      ]
+      ],
+      "location": "72, Av Zerktouni & Av Slaoui bureaux 1 &, Fès 30000"
     },
     {
       "name": "Agence web SINESI",
@@ -189,127 +216,17 @@
       "website": "https://www.sinesi.net/",
       "emails": [
         "contact@sinesi.net"
-      ]
-    },
-    {
-      "name": "emmarket.net",
-      "number": "",
-      "website": "https://emmarket.net/",
-      "emails": []
-    },
-    {
-      "name": "Designers Elite",
-      "number": "0674-899345",
-      "website": "",
-      "emails": []
-    },
-    {
-      "name": "Infographiste Freelance Soufiane",
-      "number": "0664-856570",
-      "website": "",
-      "emails": []
-    },
-    {
-      "name": "Howdy Code",
-      "number": "0663-161785",
-      "website": "http://howdycode.com/company/contact/",
-      "emails": [
-        "contact@howdycode.com"
-      ]
-    },
-    {
-      "name": "Digiben",
-      "number": "0661-463956",
-      "website": "",
-      "emails": []
-    },
-    {
-      "name": "Fes Marketing Service Agence de Communication",
-      "number": "0535-645103",
-      "website": "http://www.fes-marketing.net/contactez-nous/",
-      "emails": [
-        "commercial@fes-marketing.net",
-        "contact@fes-marketing.net"
-      ]
-    },
-    {
-      "name": "MEDEPROD",
-      "number": "0674-746177",
-      "website": "",
-      "emails": []
-    },
-    {
-      "name": "Imag'in Creative : Agence Web, Publicité et Communication",
-      "number": "0535-653985",
-      "website": "",
-      "emails": []
-    },
-    {
-      "name": "Media Hero",
-      "number": "0679-850144",
-      "website": "",
-      "emails": []
-    },
-    {
-      "name": "Getweb",
-      "number": "0638-474497",
-      "website": "https://getweb.ma/",
-      "emails": [
-        "contact@getweb.ma",
-        "support@getweb.ma"
-      ]
-    },
-    {
-      "name": "North Globals",
-      "number": "0663-204144",
-      "website": "",
-      "emails": []
-    },
-    {
-      "name": "Atlas Digital",
-      "number": "",
-      "website": "http://atlasdigital.ma/",
-      "emails": [
-        "contact@atlasdigital.ma"
-      ]
-    },
-    {
-      "name": "Comunica la solution",
-      "number": "0669-070475",
-      "website": "https://comunicasolution.com/",
-      "emails": [
-        "contact@comunicasolution.com"
-      ]
-    },
-    {
-      "name": "DigitalMarPro - Agence Marketing Digital à Fès",
-      "number": "0699-901802",
-      "website": "",
-      "emails": []
-    },
-    {
-      "name": "CAD DIGITAL AGENCY",
-      "number": "0661-678047",
-      "website": "https://caddigitalagency.com/",
-      "emails": [
-        "contact@caddigitalagency.ma",
-        "support@ito.com",
-        "contact@caddigitalagency.com"
-      ]
-    },
-    {
-      "name": "Ncreative DESIGNER",
-      "number": "",
-      "website": "https://www.amcreative.ma/",
-      "emails": [
-        "contact@amcreative.ma"
-      ]
+      ],
+      "location": "17 Lot Mernissi Av Hassan II, Av. Ain S'men, Fès 30000"
     },
     {
       "name": "Usernow - Agence Web & Branding",
-      "number": "0775-398379",
-      "website": "",
-      "emails": []
+      "number": "",
+      "website": "https://webeuz.com/",
+      "emails": [
+        "contact@webeuz.com"
+      ],
+      "location": "Casablanca"
     },
     {
       "name": "RECO-MAR",
@@ -317,158 +234,82 @@
       "website": "http://www.reco-mar.com/",
       "emails": [
         "belfkih.omar@reco-mar.com"
-      ]
+      ],
+      "location": "BUREAUX ACHRAF BD ABDELKRIM BENJELLOUN 3 EME ETAGE N° 27, Fes 30000"
     },
     {
-      "name": "Web Designer0",
-      "number": "",
-      "website": "https://metagroup.ma/",
+      "name": "Developer.ma",
+      "number": "0777-385753",
+      "website": "https://developer.ma/",
       "emails": [
-        "contact@metagroup.ma"
-      ]
+        "friends@developer.ma"
+      ],
+      "location": "Morocco"
+    },
+    {
+      "name": "Designers Elite",
+      "number": "0674-899345",
+      "website": "",
+      "emails": [],
+      "location": "5 Rue 32, Fes 30040"
     },
     {
       "name": "Solve IT Technologies",
       "number": "0661-861130",
       "website": "http://www.solve-it-technologies.com/",
-      "emails": []
+      "emails": [],
+      "location": "39 Lot du parc CH course Etg 2 bureau 9، 30000"
     },
     {
-      "name": "PEAKTECH web solutions",
+      "name": "Design & Branding",
       "number": "",
-      "website": "https://www.peaktech.ma/",
-      "emails": [
-        "contact@peaktech.ma"
-      ]
+      "website": "https://design-branding.com/",
+      "emails": [],
+      "location": "Design Address, architecture & interior design company"
     },
     {
-      "name": "ste.babelsolution",
-      "number": "0669-699997",
-      "website": "http://www.babelsolution.ma/",
-      "emails": []
+      "name": "Digital Concept Maroc",
+      "number": "0673-920595",
+      "website": "https://digitalconcept.ma/",
+      "emails": [],
+      "location": "Etage 2 Bureau 15, Espace bureau Bel air a coté Clinique rais, Fès 30000"
     },
     {
-      "name": "Référencement Maroc SEO SARL",
-      "number": "0535-616233",
-      "website": "http://www.marocseo.com/",
-      "emails": []
-    },
-    {
-      "name": "Anas El Ouahabi - AE Studio",
-      "number": "0608-472446",
-      "website": "https://www.anaselouahabi.com/",
-      "emails": []
-    },
-    {
-      "name": "Baraka Otmane",
-      "number": "",
-      "website": "http://riad-fes-baraka.com/",
-      "emails": []
-    },
-    {
-      "name": "tweragency",
-      "number": "0657-490286",
-      "website": "https://twer.agency/",
-      "emails": []
-    },
-    {
-      "name": "STALWEB",
-      "number": "0665-744665",
+      "name": "MEDEPROD",
+      "number": "0674-746177",
       "website": "",
-      "emails": []
-    },
-    {
-      "name": "Quicksite by Getweb",
-      "number": "",
-      "website": "https://getweb.ma/",
-      "emails": [
-        "contact@getweb.ma",
-        "support@getweb.ma"
-      ]
-    },
-    {
-      "name": "Vyconsulting",
-      "number": "0631-600468",
-      "website": "https://vyconsulting-group.com/",
-      "emails": []
-    },
-    {
-      "name": "NexGen Media Maroc",
-      "number": "0631-681790",
-      "website": "",
-      "emails": []
-    },
-    {
-      "name": "Dot Potential Agency",
-      "number": "0535-620023",
-      "website": "https://dotpotential.agency/",
-      "emails": [
-        "hello@dotpotential.agency"
-      ]
-    },
-    {
-      "name": "Telemaco Maroc TMCIT Sarl",
-      "number": "0535-656415",
-      "website": "http://www.telemaco.ma/",
-      "emails": [
-        "info@tmcit.net"
-      ]
-    },
-    {
-      "name": "Designerinfo",
-      "number": "",
-      "website": "https://designerinfo-a259ac.ingress-comporellon.easywp.com/",
-      "emails": []
-    },
-    {
-      "name": "Hamza El Matrah",
-      "number": "0699-337073",
-      "website": "https://hamzaelmatrah.com/",
-      "emails": []
-    },
-    {
-      "name": "MED DESIGN PUB",
-      "number": "0669-504072",
-      "website": "https://www.tiktok.com/@med_design_pub",
-      "emails": []
+      "emails": [],
+      "location": "32 Oum Rabie, Narjis C, 30070"
     },
     {
       "name": "Weblikom",
       "number": "0665-462708",
       "website": "https://weblikom.com/",
-      "emails": []
+      "emails": [],
+      "location": "app 5 imm 114i hay bessma, Fès 30030"
     },
     {
-      "name": "EawebAgent",
-      "number": "0626-662492",
-      "website": "",
-      "emails": []
-    },
-    {
-      "name": "bestcreative",
-      "number": "0535-653985",
-      "website": "",
-      "emails": []
-    },
-    {
-      "name": "MY-Coin",
-      "number": "0625-713310",
-      "website": "",
-      "emails": []
+      "name": "Howdy Code",
+      "number": "0663-161785",
+      "website": "http://howdycode.com/company/contact/",
+      "emails": [
+        "contact@howdycode.com"
+      ],
+      "location": "San Marino, Bureau N° 17, Bureaux Al Ouafae N°60, Av Ouafae, Rue, Fes 30000"
     },
     {
       "name": "OUFRID",
       "number": "0661-297613",
       "website": "",
-      "emails": []
+      "emails": [],
+      "location": "Villa 27, Riad Yassmin, Ain chkf, Fès 30000"
     },
     {
-      "name": "Innomator - Marketing, Design Visuel & Sites Web",
-      "number": "",
-      "website": "http://inventis.ma/",
-      "emails": [
-        "contact@inventis.ma"
-      ]
+      "name": "STALWEB",
+      "number": "0665-744665",
+      "website": "",
+      "emails": [],
+      "location": "1er Etage N° 11, 13 Rue Abdelkrim Benjelloun, Fès 30050"
     },
     {
       "name": "Weboost",
@@ -476,13 +317,8 @@
       "website": "https://www.weboost.ma/",
       "emails": [
         "Contact@weboost.ma"
-      ]
-    },
-    {
-      "name": "Helpful Multimedia",
-      "number": "0682-036449",
-      "website": "http://helpfulmultimedia.wuiltsite.com/",
-      "emails": []
+      ],
+      "location": "N69,2 , Avenue Saint Louis, Ain chkf, Fès 30050"
     }
   ]
 }

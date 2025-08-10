@@ -31,6 +31,7 @@ async function main() {
         console.log(`📞 With phone numbers: ${results.filter(r => r.number.trim()).length}`);
         console.log(`📧 With emails: ${results.filter(r => r.emails.length > 0).length}`);
         console.log(`🌐 With websites: ${results.filter(r => r.website).length}`);
+        console.log(`📍 With locations: ${results.filter(r => r.location && r.location.trim()).length}`);
         
         if (results.length > 0) {
             console.log('\n🎉 Sample results:');
@@ -39,6 +40,7 @@ async function main() {
                 console.log(`   📞 ${result.number || 'No phone'}`);
                 console.log(`   📧 ${result.emails.length > 0 ? result.emails.join(', ') : 'No emails'}`);
                 console.log(`   🌐 ${result.website || 'No website'}`);
+                console.log(`   📍 ${result.location || 'No location'}`);
             });
         }
         

@@ -9,6 +9,7 @@ A Node.js scraper that extracts business information from Google Maps, converted
 - 📞 **Phone Numbers**: Finds Moroccan phone numbers (+212, 05xx, 06xx, 07xx formats)
 - 🌐 **Website URLs**: Discovers business websites
 - 📧 **Email Extraction**: Visits websites to find email addresses
+- 📍 **Location/Address**: Extracts business addresses and locations
 - 🔄 **Data Processing**: Removes duplicates and filters unwanted data
 - 📊 **Multiple Formats**: Saves results in both JSON and CSV formats
 
@@ -72,7 +73,8 @@ The scraper generates two files:
       "name": "Web Design Company",
       "number": "+212 5 35 12 34 56",
       "emails": ["contact@webdesign.ma", "info@webdesign.ma"],
-      "website": "https://webdesign.ma"
+      "website": "https://webdesign.ma",
+      "location": "14 Rue de la poste, Fès"
     }
   ]
 }
@@ -81,8 +83,8 @@ The scraper generates two files:
 ### CSV Output (`google_maps_results.csv`)
 
 ```csv
-Name,Phone Number,Emails,Website
-"Web Design Company","+212 5 35 12 34 56","contact@webdesign.ma; info@webdesign.ma","https://webdesign.ma"
+Name,Phone Number,Emails,Website,Location
+"Web Design Company","+212 5 35 12 34 56","contact@webdesign.ma; info@webdesign.ma","https://webdesign.ma","14 Rue de la poste, Fès"
 ```
 
 ## How It Works
@@ -92,11 +94,12 @@ Name,Phone Number,Emails,Website
    - Business names from structured data
    - Moroccan phone numbers
    - Website URLs from map data
+   - Business addresses and locations
 3. **Website Scraping**: Visits each business website to find email addresses
 4. **Data Processing**:
    - Removes duplicates
    - Filters out social media links
-   - Matches names with corresponding contact information
+   - Matches names with corresponding contact information and locations
 5. **Output Generation**: Saves results in JSON and CSV formats
 
 ## Configuration

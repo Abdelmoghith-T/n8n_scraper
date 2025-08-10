@@ -1158,7 +1158,8 @@ class GoogleMapsScraper {
                     name: '',
                     number: '',
                     website: '',
-                    emails: []
+                    emails: [],
+                    location: ''
                 };
 
                 // Extract business name with multiple strategies
@@ -1235,7 +1236,121 @@ class GoogleMapsScraper {
                     }
                 }
 
-                console.log(`Extracted data: name="${data.name}", phone="${data.number}", website="${data.website}"`);
+                // Extract location/address with comprehensive strategies
+                const locationSelectors = [
+                    // Primary address selectors
+                    '[data-item-id="address"] .widget-pane-link', // Address widget
+                    '[data-attrid="kc:/location/location:address"]', // Address attribute
+                    '[aria-label*="Address"]', // Address aria-label
+                    '[aria-label*="Adresse"]', // French address aria-label
+                    '.section-info-line .widget-pane-link', // Info line address
+                    '[data-value*="address"]', // Address data value
+                    '[role="button"][aria-label*="Address"]', // Address button
+                    '[data-attrid*="address"]', // Any address attribute
+
+                    // Additional comprehensive selectors
+                    '[data-item-id="address"]', // Address container
+                    '.section-info-line', // Info line container
+                    '[data-attrid*="location"]', // Location attributes
+                    '.widget-pane-link', // Any widget pane link
+                    '[role="button"][data-value*="address"]', // Address buttons
+                    '.section-info-text', // General info text
+                    '.section-info-line span', // Info line spans
+                    '[aria-label*="Located"]', // Located labels
+                    '[aria-label*="Situé"]', // French located labels
+                    '.section-info-line div', // Info line divs
+                    '[data-attrid*="addr"]', // Short address attributes
+                    '.section-info .section-info-line', // Nested info lines
+                    '[data-value*="location"]' // Location data values
+                ];
+
+                for (const selector of locationSelectors) {
+                    const locationElements = document.querySelectorAll(selector);
+                    for (const locationElement of locationElements) {
+                        if (locationElement) {
+                            let location = locationElement.textContent?.trim() ||
+                                         locationElement.getAttribute('aria-label') ||
+                                         locationElement.getAttribute('data-value') ||
+                                         locationElement.title || '';
+
+                            // Clean up location text
+                            if (location && location.length > 3 && location.length < 300) {
+                                // Remove common prefixes and clean up
+                                location = location.replace(/^(Address:|Adresse:|Location:|Localisation:|Directions to|Get directions to)/i, '').trim();
+                                location = location.replace(/\s+/g, ' '); // Normalize spaces
+
+                                // Skip if it's just a phone number, website, or common non-address text
+                                if (!location.match(/^[\+\d\s\-\(\)]+$/) &&
+                                    !location.startsWith('http') &&
+                                    !location.includes('@') &&
+                                    !location.match(/^(Open|Closed|Hours|Website|Call|Menu|Photos|Reviews|Directions|Share|Save|Nearby)$/i) &&
+                                    !location.match(/^\d+(\.\d+)?\s*(km|mi|miles|minutes|mins|hours|hrs)$/i) &&
+                                    location.length > 5) {
+                                    data.location = location;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    if (data.location) break;
+                }
+
+                // Comprehensive fallback: Look for address patterns in page text and HTML
+                if (!data.location) {
+                    const pageText = document.body.textContent || '';
+                    const pageHTML = document.body.innerHTML || '';
+
+                    // Enhanced address patterns for better coverage
+                    const addressPatterns = [
+                        // Full addresses with numbers and streets
+                        /\b\d+[,\s]*(?:Avenue|Av|Boulevard|Bd|Rue|Street|St|Road|Rd)[^,\n]{3,80}[,\s]*(?:Fès|Fez|Casablanca|Rabat|Marrakech|Agadir|Tanger|Meknès|Oujda|Morocco|Maroc)/gi,
+
+                        // Street names with cities
+                        /\b(?:Avenue|Av|Boulevard|Bd|Rue|Street|St|Road|Rd)[^,\n]{3,80}[,\s]*(?:Fès|Fez|Casablanca|Rabat|Marrakech|Agadir|Tanger|Meknès|Oujda|Morocco|Maroc)/gi,
+
+                        // City with country
+                        /\b(?:Fès|Fez|Casablanca|Rabat|Marrakech|Agadir|Tanger|Meknès|Oujda)[^,\n]{0,80}[,\s]*(?:Morocco|Maroc)/gi,
+
+                        // Postal codes with cities
+                        /\b\d{5}[,\s]*(?:Fès|Fez|Casablanca|Rabat|Marrakech|Agadir|Tanger|Meknès|Oujda)[^,\n]{0,50}/gi,
+
+                        // Just city names as last resort
+                        /\b(?:Fès|Fez|Casablanca|Rabat|Marrakech|Agadir|Tanger|Meknès|Oujda)\b/gi,
+
+                        // Any street-like pattern
+                        /\b(?:Avenue|Av|Boulevard|Bd|Rue|Street|St|Road|Rd)\s+[A-Za-z0-9\s]{3,50}/gi
+                    ];
+
+                    // Try patterns on both text and HTML
+                    for (const pattern of addressPatterns) {
+                        let matches = pageText.match(pattern);
+                        if (!matches) {
+                            matches = pageHTML.match(pattern);
+                        }
+                        if (matches && matches.length > 0) {
+                            // Get the longest/most detailed match
+                            const bestMatch = matches.reduce((a, b) => a.length > b.length ? a : b);
+                            data.location = bestMatch.trim().replace(/\s+/g, ' ');
+                            break;
+                        }
+                    }
+                }
+
+                // Final fallback: Extract from URL if it contains location info
+                if (!data.location) {
+                    const currentUrl = window.location.href;
+                    const urlMatch = currentUrl.match(/\/maps\/place\/([^\/]+)/);
+                    if (urlMatch) {
+                        const urlLocation = decodeURIComponent(urlMatch[1]).replace(/\+/g, ' ');
+                        // Extract location part after the business name
+                        const locationParts = urlLocation.split(',');
+                        if (locationParts.length > 1) {
+                            data.location = locationParts.slice(1).join(',').trim();
+                        }
+                    }
+                }
+
+                console.log(`Extracted data: name="${data.name}", phone="${data.number}", website="${data.website}", location="${data.location}"`);
                 return data;
             });
 
@@ -1266,7 +1381,8 @@ class GoogleMapsScraper {
                 name: listing.name,
                 number: '',
                 website: '',
-                emails: []
+                emails: [],
+                location: ''
             };
         }
     }
@@ -1301,6 +1417,7 @@ class GoogleMapsScraper {
                         console.log(`   📧 Emails: ${businessData.emails.join(', ')}`);
                     }
                     console.log(`   📞 Phone: ${businessData.number || 'Not found'}`);
+                    console.log(`   📍 Location: ${businessData.location || 'Not found'}`);
                 }
             } catch (error) {
                 console.log(`⚠️  Error scraping ${listing.name}: ${error.message}`);
@@ -1309,7 +1426,8 @@ class GoogleMapsScraper {
                     name: listing.name,
                     number: '',
                     website: '',
-                    emails: []
+                    emails: [],
+                    location: ''
                 });
             }
 
@@ -1338,7 +1456,8 @@ class GoogleMapsScraper {
                 const data = {
                     name: '',
                     website: '',
-                    emails: []
+                    emails: [],
+                    location: ''
                 };
 
                 // Look for website button or link
@@ -1521,6 +1640,7 @@ class GoogleMapsScraper {
                         number: '',
                         website: '',
                         emails: [],
+                        location: '',
                         isValidBusiness: false
                     };
 
@@ -1604,6 +1724,102 @@ class GoogleMapsScraper {
                         }
                     }
 
+                    // Comprehensive location extraction
+                    const locationSelectors = [
+                        // Primary address selectors
+                        '[data-item-id="address"] .widget-pane-link',
+                        '[data-attrid="kc:/location/location:address"]',
+                        '[aria-label*="Address"]',
+                        '[aria-label*="Adresse"]',
+                        '.section-info-line .widget-pane-link',
+                        '[data-value*="address"]',
+                        '[role="button"][aria-label*="Address"]',
+                        '[data-attrid*="address"]',
+
+                        // Additional comprehensive selectors
+                        '[data-item-id="address"]',
+                        '.section-info-line',
+                        '[data-attrid*="location"]',
+                        '.widget-pane-link',
+                        '[role="button"][data-value*="address"]',
+                        '.section-info-text',
+                        '.section-info-line span',
+                        '[aria-label*="Located"]',
+                        '[aria-label*="Situé"]',
+                        '.section-info-line div',
+                        '[data-attrid*="addr"]',
+                        '.section-info .section-info-line',
+                        '[data-value*="location"]'
+                    ];
+
+                    for (const selector of locationSelectors) {
+                        const locationElements = document.querySelectorAll(selector);
+                        for (const locationElement of locationElements) {
+                            if (locationElement) {
+                                let location = locationElement.textContent?.trim() ||
+                                             locationElement.getAttribute('aria-label') ||
+                                             locationElement.getAttribute('data-value') ||
+                                             locationElement.title || '';
+
+                                if (location && location.length > 3 && location.length < 300) {
+                                    location = location.replace(/^(Address:|Adresse:|Location:|Localisation:|Directions to|Get directions to)/i, '').trim();
+                                    location = location.replace(/\s+/g, ' ');
+
+                                    if (!location.match(/^[\+\d\s\-\(\)]+$/) &&
+                                        !location.startsWith('http') &&
+                                        !location.includes('@') &&
+                                        !location.match(/^(Open|Closed|Hours|Website|Call|Menu|Photos|Reviews|Directions|Share|Save|Nearby)$/i) &&
+                                        !location.match(/^\d+(\.\d+)?\s*(km|mi|miles|minutes|mins|hours|hrs)$/i) &&
+                                        location.length > 5) {
+                                        data.location = location;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        if (data.location) break;
+                    }
+
+                    // Comprehensive fallback: Look for address patterns in page text and HTML
+                    if (!data.location) {
+                        const pageText = document.body.textContent || '';
+                        const pageHTML = document.body.innerHTML || '';
+
+                        const addressPatterns = [
+                            /\b\d+[,\s]*(?:Avenue|Av|Boulevard|Bd|Rue|Street|St|Road|Rd)[^,\n]{3,80}[,\s]*(?:Fès|Fez|Casablanca|Rabat|Marrakech|Agadir|Tanger|Meknès|Oujda|Morocco|Maroc)/gi,
+                            /\b(?:Avenue|Av|Boulevard|Bd|Rue|Street|St|Road|Rd)[^,\n]{3,80}[,\s]*(?:Fès|Fez|Casablanca|Rabat|Marrakech|Agadir|Tanger|Meknès|Oujda|Morocco|Maroc)/gi,
+                            /\b(?:Fès|Fez|Casablanca|Rabat|Marrakech|Agadir|Tanger|Meknès|Oujda)[^,\n]{0,80}[,\s]*(?:Morocco|Maroc)/gi,
+                            /\b\d{5}[,\s]*(?:Fès|Fez|Casablanca|Rabat|Marrakech|Agadir|Tanger|Meknès|Oujda)[^,\n]{0,50}/gi,
+                            /\b(?:Fès|Fez|Casablanca|Rabat|Marrakech|Agadir|Tanger|Meknès|Oujda)\b/gi,
+                            /\b(?:Avenue|Av|Boulevard|Bd|Rue|Street|St|Road|Rd)\s+[A-Za-z0-9\s]{3,50}/gi
+                        ];
+
+                        for (const pattern of addressPatterns) {
+                            let matches = pageText.match(pattern);
+                            if (!matches) {
+                                matches = pageHTML.match(pattern);
+                            }
+                            if (matches && matches.length > 0) {
+                                const bestMatch = matches.reduce((a, b) => a.length > b.length ? a : b);
+                                data.location = bestMatch.trim().replace(/\s+/g, ' ');
+                                break;
+                            }
+                        }
+                    }
+
+                    // Final fallback: Extract from URL
+                    if (!data.location) {
+                        const currentUrl = window.location.href;
+                        const urlMatch = currentUrl.match(/\/maps\/place\/([^\/]+)/);
+                        if (urlMatch) {
+                            const urlLocation = decodeURIComponent(urlMatch[1]).replace(/\+/g, ' ');
+                            const locationParts = urlLocation.split(',');
+                            if (locationParts.length > 1) {
+                                data.location = locationParts.slice(1).join(',').trim();
+                            }
+                        }
+                    }
+
                     return data;
                 }, business.name);
 
@@ -1614,6 +1830,7 @@ class GoogleMapsScraper {
                     businessData.number = business.number || '';
                     businessData.website = business.website || '';
                     businessData.emails = business.emails || [];
+                    businessData.location = business.location || '';
                 } else {
                     // If we found a website, scrape it for emails
                     if (businessData.website) {
@@ -1786,6 +2003,142 @@ class GoogleMapsScraper {
         });
 
         return [...new Set(cleanedNumbers)]; // Remove duplicates
+    }
+
+    extractLocations(htmlContent) {
+        console.log('📍 Extracting business locations with enhanced patterns...');
+
+        const locations = [];
+
+        // Comprehensive address patterns for maximum coverage
+        const addressPatterns = [
+            // JSON-structured address data
+            /(?:"address"|"location"|"adresse"|"addr")[^"]*"([^"]*(?:Avenue|Av|Boulevard|Bd|Rue|Street|St|Road|Rd)[^"]{3,150}[^"]*(?:Fès|Fez|Casablanca|Rabat|Marrakech|Agadir|Tanger|Meknès|Oujda|Morocco|Maroc)[^"]*)"/gi,
+
+            // General JSON address patterns
+            /(?:"address"|"location"|"adresse"|"addr")[^"]*"([^"]{8,200})"/gi,
+
+            // Full addresses with numbers and streets
+            /\b(\d+[,\s]*(?:Avenue|Av|Boulevard|Bd|Rue|Street|St|Road|Rd|Allée|Place|Quartier)[^,\n]{3,100}[,\s]*(?:Fès|Fez|Casablanca|Rabat|Marrakech|Agadir|Tanger|Meknès|Oujda|Morocco|Maroc))/gi,
+
+            // Street names with cities
+            /\b((?:Avenue|Av|Boulevard|Bd|Rue|Street|St|Road|Rd|Allée|Place|Quartier)[^,\n]{3,100}[,\s]*(?:Fès|Fez|Casablanca|Rabat|Marrakech|Agadir|Tanger|Meknès|Oujda|Morocco|Maroc))/gi,
+
+            // Postal codes with cities
+            /\b(\d{5}[,\s]*(?:Fès|Fez|Casablanca|Rabat|Marrakech|Agadir|Tanger|Meknès|Oujda)[^,\n]{0,80})/gi,
+
+            // City with country/region
+            /\b((?:Fès|Fez|Casablanca|Rabat|Marrakech|Agadir|Tanger|Meknès|Oujda)[^,\n]{0,80}[,\s]*(?:Morocco|Maroc|Médina|Centre|Ville))/gi,
+
+            // Neighborhood/district patterns
+            /\b((?:Médina|Centre|Ville|Quartier|Zone)[^,\n]{3,80}[,\s]*(?:Fès|Fez|Casablanca|Rabat|Marrakech|Agadir|Tanger|Meknès|Oujda))/gi,
+
+            // Just city names (last resort)
+            /\b((?:Fès|Fez|Casablanca|Rabat|Marrakech|Agadir|Tanger|Meknès|Oujda))\b/gi,
+
+            // Any street-like pattern
+            /\b((?:Avenue|Av|Boulevard|Bd|Rue|Street|St|Road|Rd|Allée|Place)\s+[A-Za-z0-9\s]{3,80})/gi,
+
+            // Coordinates pattern (as fallback)
+            /\b(\d+\.\d+[,\s]*\d+\.\d+)/g
+        ];
+
+        addressPatterns.forEach(pattern => {
+            let match;
+            while ((match = pattern.exec(htmlContent)) !== null) {
+                let location = match[1].trim();
+
+                // Clean up the location
+                location = location.replace(/\\u[\dA-Fa-f]{4}/g, match =>
+                    String.fromCharCode(parseInt(match.slice(2), 16))
+                );
+                location = location.replace(/\\+/g, '').trim();
+
+                // Enhanced location validation
+                if (location &&
+                    location.length > 3 &&
+                    location.length < 300 &&
+                    !location.match(/^[\+\d\s\-\(\)]+$/) && // Not just phone number
+                    !location.startsWith('http') && // Not URL
+                    !location.includes('@') && // Not email
+                    !location.match(/^\d+$/) && // Not just numbers
+                    !location.match(/^(Open|Closed|Hours|Website|Call|Menu|Photos|Reviews|Directions|Share|Save|Nearby|More|Info)$/i) && // Not UI elements
+                    !location.match(/^\d+(\.\d+)?\s*(km|mi|miles|minutes|mins|hours|hrs|stars|rating)$/i) && // Not distances/ratings
+                    !location.match(/^(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|Mon|Tue|Wed|Thu|Fri|Sat|Sun)$/i) && // Not days
+                    !location.match(/^\d{1,2}:\d{2}/) && // Not times
+                    location.trim().length > 3
+                ) {
+                    locations.push(location);
+                }
+            }
+        });
+
+        // Remove duplicates and return
+        const uniqueLocations = [...new Set(locations)];
+        console.log(`📍 Found ${uniqueLocations.length} potential locations`);
+
+        if (uniqueLocations.length <= 10) {
+            console.log('📍 Locations found:', uniqueLocations);
+        }
+
+        return uniqueLocations;
+    }
+
+    // Enhanced method to ensure every business gets a location
+    async ensureAllBusinessesHaveLocations(results) {
+        console.log('📍 Ensuring all businesses have location data...');
+
+        const businessesWithoutLocation = results.filter(business => !business.location || business.location.trim() === '');
+
+        if (businessesWithoutLocation.length === 0) {
+            console.log('✅ All businesses already have location data!');
+            return results;
+        }
+
+        console.log(`🔍 Found ${businessesWithoutLocation.length} businesses without locations. Attempting to extract...`);
+
+        // For businesses without locations, try to extract from the search query city
+        const searchCity = this.extractCityFromQuery(this.searchQuery);
+
+        for (const business of businessesWithoutLocation) {
+            if (!business.location) {
+                // Assign the search city as a fallback location
+                business.location = searchCity;
+                console.log(`📍 Assigned fallback location "${searchCity}" to ${business.name}`);
+            }
+        }
+
+        const finalLocationCount = results.filter(r => r.location && r.location.trim()).length;
+        console.log(`📊 Final location coverage: ${finalLocationCount}/${results.length} businesses (${Math.round(finalLocationCount/results.length*100)}%)`);
+
+        return results;
+    }
+
+    // Extract city name from search query for fallback locations
+    extractCityFromQuery(query) {
+        const moroccanCities = [
+            'Fès', 'Fez', 'Casablanca', 'Rabat', 'Marrakech', 'Agadir',
+            'Tanger', 'Meknès', 'Oujda', 'Kenitra', 'Tetouan', 'Safi',
+            'Mohammedia', 'Khouribga', 'Beni Mellal', 'El Jadida', 'Nador'
+        ];
+
+        const queryLower = query.toLowerCase();
+
+        for (const city of moroccanCities) {
+            if (queryLower.includes(city.toLowerCase())) {
+                return city;
+            }
+        }
+
+        // If no specific city found, try to extract from common patterns
+        const cityMatch = query.match(/\bin\s+([A-Za-z\s]+)$/i);
+        if (cityMatch) {
+            const extractedCity = cityMatch[1].trim();
+            // Capitalize first letter
+            return extractedCity.charAt(0).toUpperCase() + extractedCity.slice(1);
+        }
+
+        return 'Morocco'; // Ultimate fallback
     }
 
     extractWebsiteUrls(htmlContent) {
@@ -2221,16 +2574,17 @@ class GoogleMapsScraper {
         console.log(`🔧 Applied ${correctionCount} corrections`);
     }
 
-    async processBusinessData(names, numbers) {
+    async processBusinessData(names, numbers, locations = []) {
         console.log('🔄 Processing business data with enhanced matching...');
-        console.log(`📊 Input: ${names.length} business names, ${numbers.length} phone numbers`);
+        console.log(`📊 Input: ${names.length} business names, ${numbers.length} phone numbers, ${locations.length} locations`);
 
-        // Create business records by directly matching names with phone numbers
+        // Create business records by directly matching names with phone numbers and locations
         const businessRecords = [];
         const htmlContent = await this.getStoredHtmlContent();
 
-        // Create a copy of numbers array to avoid modifying the original
+        // Create a copy of arrays to avoid modifying the originals
         const availableNumbers = [...numbers];
+        const availableLocations = [...locations];
 
         // For each business name, try to find the closest phone number in the HTML
         names.forEach((name, index) => {
@@ -2238,7 +2592,8 @@ class GoogleMapsScraper {
                 name: name,
                 number: '',
                 website: '',
-                emails: []
+                emails: [],
+                location: ''
             };
 
             // Try to find a phone number for this business using proximity matching
@@ -2271,6 +2626,45 @@ class GoogleMapsScraper {
 
             businessRecords.push(business);
         });
+
+        // Match locations with businesses using proximity matching
+        if (availableLocations.length > 0) {
+            console.log('📍 Matching locations with businesses...');
+
+            businessRecords.forEach(business => {
+                if (!business.location) {
+                    let bestLocationMatch = '';
+                    let bestLocationDistance = Infinity;
+
+                    availableLocations.forEach(location => {
+                        // Find the position of the business name and location in HTML
+                        const nameIndex = htmlContent.toLowerCase().indexOf(business.name.toLowerCase());
+                        const locationIndex = htmlContent.toLowerCase().indexOf(location.toLowerCase());
+
+                        if (nameIndex !== -1 && locationIndex !== -1) {
+                            const distance = Math.abs(nameIndex - locationIndex);
+                            if (distance < bestLocationDistance) {
+                                bestLocationDistance = distance;
+                                bestLocationMatch = location;
+                            }
+                        }
+                    });
+
+                    // If we found a close match (within 15k characters), assign it
+                    if (bestLocationMatch && bestLocationDistance < 15000) {
+                        business.location = bestLocationMatch;
+                        // Remove the used location to avoid duplicates
+                        const locationIndex = availableLocations.indexOf(bestLocationMatch);
+                        if (locationIndex > -1) {
+                            availableLocations.splice(locationIndex, 1);
+                        }
+                    }
+                }
+            });
+
+            const recordsWithLocations = businessRecords.filter(r => r.location && r.location.trim() !== '').length;
+            console.log(`📍 Location matching: ${recordsWithLocations} out of ${businessRecords.length} businesses matched with locations`);
+        }
 
         // If we still have unmatched phone numbers, assign them to businesses without phones
         const businessesWithoutPhones = businessRecords.filter(b => !b.number);
@@ -2755,8 +3149,9 @@ class GoogleMapsScraper {
             const names = await this.extractBusinessNames(htmlContent);
             const numbers = this.extractPhoneNumbers(htmlContent);
             const websites = this.extractWebsiteUrls(htmlContent);
+            const locations = this.extractLocations(htmlContent);
 
-            console.log(`📊 Extraction results: ${names.length} names, ${numbers.length} numbers, ${websites.length} websites`);
+            console.log(`📊 Extraction results: ${names.length} names, ${numbers.length} numbers, ${websites.length} websites, ${locations.length} locations`);
 
             // Debug info (only show if less than 20 items)
             if (names.length <= 20) {
@@ -2765,7 +3160,7 @@ class GoogleMapsScraper {
 
             // Step 3: Process and match data with improved algorithm
             console.log('⚙️  Step 3: Processing and matching data with improved algorithm...');
-            let results = await this.processBusinessData(names, numbers);
+            let results = await this.processBusinessData(names, numbers, locations);
 
             // Step 4: Optimized individual business verification for 100% accuracy
             console.log(`🔍 Step 4: Optimized individual business verification for 100% accuracy...`);
@@ -2805,8 +3200,12 @@ class GoogleMapsScraper {
                 }
             }
 
-            // Step 5: Save results
-            console.log('💾 Step 5: Saving results...');
+            // Step 5: Ensure all businesses have locations
+            console.log('📍 Step 5: Ensuring comprehensive location coverage...');
+            results = await this.ensureAllBusinessesHaveLocations(results);
+
+            // Step 6: Save results
+            console.log('💾 Step 6: Saving results...');
             await this.saveResults(results);
 
             const duration = ((Date.now() - startTime) / 1000).toFixed(1);
@@ -2852,14 +3251,15 @@ class GoogleMapsScraper {
     }
 
     convertToCSV(results) {
-        const headers = ['Name', 'Phone Number', 'Emails', 'Website'];
+        const headers = ['Name', 'Phone Number', 'Emails', 'Website', 'Location'];
         const rows = results.map(result => [
             `"${result.name}"`,
             `"${result.number}"`,
             `"${result.emails.join('; ')}"`,
-            `"${result.website}"`
+            `"${result.website}"`,
+            `"${result.location || ''}"`
         ]);
-        
+
         return [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
     }
 }
